@@ -1,18 +1,14 @@
 from trust.agent import PDTAgent
 from trust.network import Network
+from trust.choice import PDTChoice
 from mesa import Model
 from mesa.time import RandomActivation
-from enum import Enum
-
-
-class PDTChoice(Enum):
-    DEFECT = 0
-    COOPERATE = 1
 
 
 class PDTModel(Model):
     _PDT_PAYOFF = {(PDTChoice.DEFECT, PDTChoice.COOPERATE): 1,  # Without opportunity cost
-                   (PDTChoice.COOPERATE, PDTChoice.COOPERATE): 0.7, # Without opportunity cost
+                   # Without opportunity cost
+                   (PDTChoice.COOPERATE, PDTChoice.COOPERATE): 0.7,
                    (PDTChoice.DEFECT, PDTChoice.DEFECT): -0.2,
                    (PDTChoice.COOPERATE, PDTChoice.DEFECT): -0.5,
                    }
@@ -46,3 +42,8 @@ class PDTModel(Model):
         self.schedule.step()
         self.network.pair_and_play()
         self.network.clean_up()
+
+    def run_model(self, T=2000) -> None:
+        for _ in range(T):
+            self.step()
+        self.running = False
