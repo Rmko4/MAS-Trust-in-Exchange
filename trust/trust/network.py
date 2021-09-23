@@ -29,7 +29,7 @@ class Network:
 
         self.play_PDT(self.market)
 
-    def play_PDT(self, agentList: list['PDTAgent']) -> None:
+    def play_PDT(self, agentList: 'list[PDTAgent]') -> None:
         self.model.random.shuffle(agentList)
         for i in range(int(len(agentList)/2)):
             a = agentList[i]
