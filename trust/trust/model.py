@@ -17,7 +17,7 @@ class PDTModel(Model):
     def opportunity_cost(self, neighbourhood_size: int) -> float:
         return 1 - (neighbourhood_size - 1) / (self.num_agents - 1)
 
-    def pdt_payoff(self, choices: tuple[int, int], opportunity_cost: int) -> float:
+    def pdt_payoff(self, choices: 'tuple[int, int]', opportunity_cost: int) -> float:
         payoff = self._PDT_PAYOFF[choices]
         if choices[1] == PDTChoice.COOPERATE:
             payoff -= 0.5 * opportunity_cost
