@@ -1,34 +1,39 @@
-from trust.agent import PDTAgent
-from trust.network import Network
-from trust.choice import PDTChoice
 from mesa import Model
-from mesa.time import RandomActivation
+from mesa.datacollection import DataCollector
+
+from trust.activation import TwoStepActivation
+from trust.agent import PDTAgent
+from trust.choice import PDTChoice
+from trust.network import Network
 
 
 class PDTModel(Model):
     _PDT_PAYOFF = {(PDTChoice.DEFECT, PDTChoice.COOPERATE): 1,  # Without opportunity cost
-                   # Without opportunity cost
                    (PDTChoice.COOPERATE, PDTChoice.COOPERATE): 0.7,
                    (PDTChoice.DEFECT, PDTChoice.DEFECT): -0.2,
                    (PDTChoice.COOPERATE, PDTChoice.DEFECT): -0.5,
                    }
-    EXIT_PAYOFF = -0.2
+    _EXIT_PAYOFF = -0.2
 
-    def opportunity_cost(self, neighbourhood_size: int) -> float:
+    def get_opportunity_cost(self, neighbourhood_size: int) -> float:
         return 1 - (neighbourhood_size - 1) / (self.num_agents - 1)
 
-    def pdt_payoff(self, choices: 'tuple[int, int]', opportunity_cost: int) -> float:
-        payoff = self._PDT_PAYOFF[choices]
+    def get_pdt_payoff(self, choices: 'tuple[int, int]', opportunity_cost: int) -> float:
+        payoff = PDTModel._PDT_PAYOFF[choices]
         if choices[1] == PDTChoice.COOPERATE:
             payoff -= 0.5 * opportunity_cost
         return payoff
+
+    @property
+    def exit_payoff(self):
+        return PDTModel._EXIT_PAYOFF
 
     def __init__(self, N=1000, neighbourhood_size=50, mobility_rate=0.2) -> None:
         self.num_agents = N
         self.num_neighbourhoods = int(self.num_agents / neighbourhood_size)
 
         self.network = Network(self, self.num_neighbourhoods)
-        self.schedule = RandomActivation(self)
+        self.schedule = TwoStepActivation(self)
 
         self.mobility_rate = mobility_rate
 
@@ -37,13 +42,34 @@ class PDTModel(Model):
             # TODO: Cluster agent location into neighborhoods of randomly varying size.
             a = PDTAgent(i, self, neighbourhood)
             self.schedule.add(a)
+            self.network.add_agent_to_neighbourhood(a, neighbourhood)
+
+        self.datacollector = DataCollector(
+            {
+                "Market_Size": lambda m: m.market_size(),
+                "Trust_Rate": lambda m: m.trust_rate()
+            }
+        )
 
     def step(self):
         self.schedule.step()
         self.network.pair_and_play()
-        self.network.clean_up()
+
+        self.datacollector.collect(self)
+        self.schedule.finalize()
+
 
     def run_model(self, T=2000) -> None:
+        self.running = True
         for _ in range(T):
             self.step()
         self.running = False
+
+    def market_size(self) -> float:
+        p = [a for a in self.schedule.agents if a.in_market]
+        return len([a for a in self.schedule.agents if a.in_market]) / self.num_agents
+
+    def trust_rate(self) -> float:
+        p = [a for a in self.schedule.agents if a.play]
+        return len([a for a in self.schedule.agents if a.play]) / self.num_agents
+    
