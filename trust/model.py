@@ -55,21 +55,24 @@ class PDTModel(Model):
         self.schedule.step()
         self.network.pair_and_play()
 
-        self.datacollector.collect(self)
+        if self.record == True:
+            self.datacollector.collect(self)
         self.schedule.finalize()
 
 
-    def run_model(self, T=2000) -> None:
+    def run_model(self, T_onset=1000, T_record=1000) -> None:
         self.running = True
-        for _ in range(T):
+        self.record = False
+        for _ in range(T_onset):
+            self.step()
+        self.record = True
+        for _ in range(T_record):
             self.step()
         self.running = False
 
     def market_size(self) -> float:
-        p = [a for a in self.schedule.agents if a.in_market]
         return len([a for a in self.schedule.agents if a.in_market]) / self.num_agents
 
     def trust_rate(self) -> float:
-        p = [a for a in self.schedule.agents if a.play]
         return len([a for a in self.schedule.agents if a.play]) / self.num_agents
     

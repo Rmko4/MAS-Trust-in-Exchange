@@ -10,7 +10,7 @@ class TwoStepActivation(BaseScheduler):
         """
         for agent in self.agent_buffer(shuffled=True):
             agent.step()
-        self.steps += .5
+        self.time += .5
 
     def finalize(self) -> None:
         """Executes the finalize of all agents, one at a time, in
@@ -19,5 +19,5 @@ class TwoStepActivation(BaseScheduler):
         """
         for agent in self.agent_buffer(shuffled=True):
             agent.finalize()
-        self.steps += .5
-        self.time += 1
+        self.time += .5
+        self.steps += 1
