@@ -63,3 +63,8 @@ class Network:
 
     def get_role_model(self, neighbourhood: int) -> 'PDTAgent':
         return max(self.neighbourhoods[neighbourhood], key=lambda a: a.cumulative_payoff)
+        # potential_models = [a for a in self.neighbourhoods[neighbourhood] if not a.newcomer]
+        # if len(potential_models) == 0:
+        #     return None
+        # else:
+        #     return max(potential_models, key=lambda a: a.cumulative_payoff)

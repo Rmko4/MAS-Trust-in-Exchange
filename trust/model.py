@@ -1,3 +1,4 @@
+import numpy as np
 from mesa import Model
 from mesa.datacollection import DataCollector
 
@@ -47,6 +48,8 @@ class PDTModel(Model):
         self.datacollector = DataCollector(
             {
                 "Market_Size": lambda m: m.market_size(),
+                "Trust_in_Strangers": lambda m: m.trust_in_strangers(),
+                "Signal_Reading": lambda m: m.signal_reading(),
                 "Trust_Rate": lambda m: m.trust_rate(),
                 "Cooperating_Agents": lambda m: m.cooperating_agents()
             }
@@ -78,3 +81,11 @@ class PDTModel(Model):
 
     def cooperating_agents(self) -> float:
         return len([a for a in self.schedule.agents if a.pdtchoice == PDTChoice.COOPERATE]) / self.num_agents
+
+    def trust_in_strangers(self) -> float:
+        a_with_stranger_partners = [
+            a for a in self.schedule.agents if a.stranger_partner]
+        return len([a for a in a_with_stranger_partners if a.play]) / len(a_with_stranger_partners)
+
+    def signal_reading(self) -> float:
+        return np.mean([a.signal_reading_prob for a in self.schedule.agents])
