@@ -47,7 +47,8 @@ class PDTModel(Model):
         self.datacollector = DataCollector(
             {
                 "Market_Size": lambda m: m.market_size(),
-                "Trust_Rate": lambda m: m.trust_rate()
+                "Trust_Rate": lambda m: m.trust_rate(),
+                "Cooperating_Agents": lambda m: m.cooperating_agents()
             }
         )
 
@@ -58,7 +59,6 @@ class PDTModel(Model):
         if self.record == True:
             self.datacollector.collect(self)
         self.schedule.finalize()
-
 
     def run_model(self, T_onset=1000, T_record=1000) -> None:
         self.running = True
@@ -75,4 +75,6 @@ class PDTModel(Model):
 
     def trust_rate(self) -> float:
         return len([a for a in self.schedule.agents if a.play]) / self.num_agents
-    
+
+    def cooperating_agents(self) -> float:
+        return len([a for a in self.schedule.agents if a.pdtchoice == PDTChoice.COOPERATE]) / self.num_agents

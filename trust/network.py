@@ -40,8 +40,11 @@ class Network:
             a = agentList[i]
             b = agentList[i + 1]
 
-            a.decide_exchange()
-            b.decide_exchange()
+            a.decide_cooperation()
+            b.decide_cooperation()
+
+            a.decide_play(b)
+            b.decide_play(a)
 
             if a.play and b.play:
                 # Both agents trust so PD is played

@@ -12,13 +12,16 @@ class PDTAgent(Agent):
         self.neighbourhood = neighbourhood
         self.newcomer = False
 
+        # Equivalent to the propensity to parochialism (antagonist read signals)
         self.trust_prob = self.random.random()
+        # Propensity to cooperate (over defect)
         self.trustworthiness_prob = self.random.random()
+        # Propensity to enter the open market (over staying in the neighbourhood)
         self.location_prob = self.random.random()
 
         self.play = True
         self.pdtchoice = PDTChoice.COOPERATE
-        self.in_market = True
+        self.in_market = False
 
         self.payoff = 0
         self.cumulative_payoff = 0
@@ -27,7 +30,6 @@ class PDTAgent(Agent):
         # Change neighbourhood involuntary
         if self.random.random() < self.model.mobility_rate:
             self.move()
-            self.enter_market()  # TODO: Should newcomers enter the market?
         else:
             self.stay()
 
@@ -38,6 +40,30 @@ class PDTAgent(Agent):
     def finalize(self) -> None:
         self.update_behaviour()
         self.leave_market()
+
+    def decide_cooperation(self) -> None:
+        # Trustworthiness is not model conditionally here,
+        # therefore it remains uniform across conditions (neighbourhood or open market)
+        if self.random.random() < self.trustworthiness_prob:
+            self.pdtchoice = PDTChoice.COOPERATE
+        else:
+            self.pdtchoice = PDTChoice.DEFECT
+
+    def decide_play(self, exchange_partner : 'PDTAgent') -> None:
+        if self.random.random() < self.trust_prob:
+            # Parochialism
+            if exchange_partner.newcomer or self.newcomer or self.in_market:
+                # Also assume self as newcomer to distrust strangers
+                self.play = False
+            else:
+                self.play = True
+        else:
+            # Signal reading
+            signal = exchange_partner.get_signal()
+            if signal == PDTChoice.COOPERATE:
+                self.play = True
+            else:
+                self.play = False
 
     def move(self) -> None:
         new_nbh = self.random.randint(0, self.model.num_neighbourhoods - 1)
@@ -60,18 +86,16 @@ class PDTAgent(Agent):
         self.model.network.remove_agent_from_market(self)
         self.in_market = False
 
-    def decide_exchange(self) -> None:
-        if self.random.random() < self.trustworthiness_prob:
-            self.pdtchoice = PDTChoice.COOPERATE
+    def get_signal(self) -> PDTChoice:
+        # At a trustworthiness of 0.5 the agents is ambivalent.
+        # At either 0 or 1 the signal is assumed to be perfect.
+        # The signal correctness is linearly interpolated between those values
+        signal_correctness = 0.5 + abs(self.trustworthiness_prob - 0.5)
+        if self.random.random() < signal_correctness:
+            return self.pdtchoice
         else:
-            self.pdtchoice = PDTChoice.DEFECT
-
-        if self.random.random() < self.trust_prob:
-            self.play = True
-        else:
-            self.play = False
-
-
+            # Returns opposite signal of the PDT choice
+            return PDTChoice.COOPERATE if self.pdtchoice == PDTChoice.DEFECT else PDTChoice.DEFECT
 
     def receive_payoff(self, payoff):
         self.payoff = payoff
