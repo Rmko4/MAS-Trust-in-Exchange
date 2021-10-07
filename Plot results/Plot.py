@@ -1,0 +1,42 @@
+
+import matplotlib.pyplot as plt
+
+#Values for Mobility rate going from 0 to 1 in steps of 0.1 whith N = 1000 and n = 40
+Market_Size = [0.496275, 0.323372, 0.377791, 0.593943, 0.681348, 0.686225, 0.70901, 0.704406, 0.6968240000000001, 0.6963499999999999, 0.677071]
+Trust_in_Strangers = [0.012008437993845947, 0.2727541614280782, 0.31454176143685436, 0.4006033821557356, 0.4238023467737292, 0.43440855930901157, 0.44345582751480744, 0.448632333777107, 0.4423929925041018, 0.4429217088512872, 0.430329]
+Signal_Reading = [0.49920325275952915, 0.472760728257836, 0.5505342424915173, 0.7185609216923593, 0.7597900418478928, 0.7667758512701296, 0.774266988061989, 0.7704054214891014, 0.765917885919355, 0.7620925442934982, 0.7480653738402835]
+Trust_Rate = [0.27537199999999995, 0.5649489999999999, 0.499876, 0.46266999999999997, 0.4548960000000001, 0.455751, 0.455199, 0.455632, 0.445598, 0.44373599999999996, 0.430329]
+Cooperating_Agents = [0.030403999999999997, 0.5795370000000001, 0.580198, 0.556613, 0.549059, 0.5569379999999999, 0.5616749999999999, 0.571875, 0.568649, 0.57474, 0.573096]
+
+#Values for Neighboorhood size goin from 10 to 100 in steps of 10 whith N = 1000 and social mobility = 0.3
+Market_Size_Vary_n = [0.48027600000000004, 0.526314, 0.5779890000000001, 0.628017, 0.600407, 0.598598, 0.66679, 0.6302170000000001, 0.6391299999999999, 0.661192]
+Trust_in_Strangers_Vary_n = [0.3489858985219671, 0.3706307628029441, 0.39476934519098666, 0.41073911961497284, 0.3979526405603074, 0.390901562969877, 0.42082883181180897, 0.4148120560927575, 0.4062696859976449, 0.41623755552486263]
+Signal_Reading_Vary_n = [0.621722191163186, 0.6628156044081418, 0.7074225215612189, 0.7296627950219687, 0.7179027266559277, 0.7075679727057006, 0.7568180566654348, 0.7455391617807188, 0.7384568170838182, 0.7595411590912589]
+Trust_Rate_Vary_n = [0.455504, 0.45705599999999996, 0.46164, 0.46546499999999996, 0.45913600000000004, 0.45757299999999995, 0.464856, 0.466483, 0.457515, 0.46076700000000004]
+Cooperating_Agents_Vary_n = [0.579785, 0.5649959999999999, 0.557323, 0.55903, 0.548077, 0.546477, 0.544691, 0.550766, 0.539188, 0.537052]
+
+yAxis = [i /10 for i in range(11)]
+
+plt.title("Effect of social mobility with N = 1000 and n = 40")
+plt.plot(yAxis, Market_Size, label = "Market_Size")
+plt.plot(yAxis, Trust_in_Strangers, label ="Trust_in_Strangers")
+plt.plot(yAxis, Signal_Reading, label ="Signal_Reading")
+plt.plot(yAxis, Trust_Rate, label ="Trust_Rate")
+plt.plot(yAxis, Cooperating_Agents, label ="Cooperating_Agents")
+plt.ylabel('Mean value')
+plt.xlabel('Social mobility')
+plt.legend()
+plt.show()
+
+yAxis = [ 10 +i*10 for i in range(10)]
+
+plt.title("Effect of neighboorhood size with N = 1000 and social mobility = 0.3")
+plt.plot(yAxis, Market_Size_Vary_n, label = "Market_Size")
+plt.plot(yAxis, Trust_in_Strangers_Vary_n, label ="Trust_in_Strangers")
+plt.plot(yAxis, Signal_Reading_Vary_n, label ="Signal_Reading")
+plt.plot(yAxis, Trust_Rate_Vary_n, label ="Trust_Rate")
+plt.plot(yAxis, Cooperating_Agents_Vary_n, label ="Cooperating_Agents")
+plt.ylabel('Mean value')
+plt.xlabel('Neighboorhood Size')
+plt.legend()
+plt.show()

@@ -135,6 +135,7 @@ class PDTAgent(Agent):
             self.signal_reading_prob = stochastic_learning(
                 self.signal_reading_prob, self.payoff)
 
+        #Comment by Lukas: Is it right that the trustworthiness is always updated, even if the game of PF was not played? 
         if role_model is not None and self.random.random() > 0.5:
             self.trustworthiness_prob = role_model.trustworthiness_prob
         elif self.pdtchoice == PDTChoice.COOPERATE:
