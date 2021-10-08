@@ -111,6 +111,7 @@ class PDTAgent(Agent):
 
     def update_behaviour(self):
         # TODO: Do not update when the agent is not paired up at all.
+        # TODO: Make sure the role model is not self.
         def stochastic_learning(prob: float, payoff: float) -> float:
             if payoff >= 0:
                 return prob + (1 - prob) * payoff
