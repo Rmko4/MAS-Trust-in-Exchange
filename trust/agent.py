@@ -110,6 +110,7 @@ class PDTAgent(Agent):
         self.cumulative_payoff += payoff
 
     def update_behaviour(self):
+        # TODO: Do not update when the agent is not paired up at all.
         def stochastic_learning(prob: float, payoff: float) -> float:
             if payoff >= 0:
                 return prob + (1 - prob) * payoff
