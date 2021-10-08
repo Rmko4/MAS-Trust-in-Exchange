@@ -51,7 +51,9 @@ class PDTModel(Model):
                 "Trust_in_Strangers": lambda m: m.trust_in_strangers(),
                 "Signal_Reading": lambda m: m.signal_reading(),
                 "Trust_Rate": lambda m: m.trust_rate(),
-                "Cooperating_Agents": lambda m: m.cooperating_agents()
+                "Cooperating_Agents": lambda m: m.cooperating_agents(),
+                "Trust_in_Neighbors": lambda m: m.trust_in_neighbors(),
+                "Trust_in_Newcomers": lambda m: m.trust_in_newcomers()
             }
         )
 
@@ -86,6 +88,23 @@ class PDTModel(Model):
         a_with_stranger_partners = [
             a for a in self.schedule.agents if a.stranger_partner]
         return len([a for a in a_with_stranger_partners if a.play]) / len(a_with_stranger_partners)
+
+    def trust_in_strangers(self) -> float:
+        a_with_stranger_partners = [
+            a for a in self.schedule.agents if a.stranger_partner]
+        return len([a for a in a_with_stranger_partners if a.play]) / len(a_with_stranger_partners)
+
+    def trust_in_neighbors(self) -> float:
+        a_with_neighbor_partners = [
+            a for a in self.schedule.agents if not a.in_market]
+        return len([a for a in a_with_neighbor_partners if a.play]) / len(a_with_neighbor_partners)
+
+    def trust_in_newcomers(self) -> float:
+        a_with_newcommers = [
+            a for a in self.schedule.agents if a.partern_Is_Newcommer]
+        if len(a_with_newcommers) ==0:
+            return 0
+        return len([a for a in a_with_newcommers if a.play]) / len(a_with_newcommers)
 
     def signal_reading(self) -> float:
         return np.mean([a.signal_reading_prob for a in self.schedule.agents])

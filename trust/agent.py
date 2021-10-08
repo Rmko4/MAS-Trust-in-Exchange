@@ -51,6 +51,13 @@ class PDTAgent(Agent):
             self.pdtchoice = PDTChoice.DEFECT
 
     def decide_play(self, exchange_partner : 'PDTAgent') -> None:
+
+        #needed to plot results
+        if not self.in_market and (exchange_partner.newcomer or self.newcomer) :
+            self.partern_Is_Newcommer = True
+        else:
+            self.partern_Is_Newcommer = False
+
         if exchange_partner.newcomer or self.newcomer or self.in_market:
             self.stranger_partner = True
         else:
