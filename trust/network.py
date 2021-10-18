@@ -14,7 +14,7 @@ class Network:
 
     def add_agent_to_neighbourhood(self, agent: 'PDTAgent', neighbourhood: int):
         old_nbh = agent.neighbourhood
-        self.neighbourhoods[old_nbh].discard(agent) 
+        self.neighbourhoods[old_nbh].discard(agent)
 
         self.neighbourhoods[neighbourhood].add(agent)
         agent.neighbourhood = neighbourhood
@@ -35,10 +35,10 @@ class Network:
     def play_PDT(self, agentSet: 'set[PDTAgent]') -> None:
         agentList = list(agentSet)
         self.model.random.shuffle(agentList)
-        
+
         for i in range(int(len(agentList)/2)):
-            a = agentList[i]
-            b = agentList[i + 1]
+            a = agentList[2*i]
+            b = agentList[2*i + 1]
 
             a.decide_cooperation()
             b.decide_cooperation()
@@ -48,7 +48,8 @@ class Network:
 
             if a.play and b.play:
                 # Both agents trust so PD is played
-                opportunity_cost = self.model.get_opportunity_cost(len(agentList))
+                opportunity_cost = self.model.get_opportunity_cost(
+                    len(agentList))
                 a_payoff = self.model.get_pdt_payoff(
                     (a.pdtchoice, b.pdtchoice), opportunity_cost)
                 b_payoff = self.model.get_pdt_payoff(
@@ -59,7 +60,6 @@ class Network:
                 # One agent does not trust so PD is not played and both agents receive exit payoff
                 a.receive_payoff(self.model.exit_payoff)
                 b.receive_payoff(self.model.exit_payoff)
-
 
     def get_role_model(self, neighbourhood: int) -> 'PDTAgent':
         return max(self.neighbourhoods[neighbourhood], key=lambda a: a.cumulative_payoff)

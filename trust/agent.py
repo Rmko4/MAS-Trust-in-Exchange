@@ -23,6 +23,7 @@ class PDTAgent(Agent):
         self.pdtchoice = PDTChoice.COOPERATE
         self.in_market = False
         self.read_signal = False
+        self.paired = False
 
         self.payoff = 0
         self.cumulative_payoff = 0
@@ -39,8 +40,11 @@ class PDTAgent(Agent):
             self.enter_market()
 
     def finalize(self) -> None:
-        self.update_behaviour()
+        if self.paired:
+            self.update_behaviour()
+        self.paired = False
         self.leave_market()
+
 
     def decide_cooperation(self) -> None:
         # Trustworthiness is not model conditionally here,
@@ -51,6 +55,8 @@ class PDTAgent(Agent):
             self.pdtchoice = PDTChoice.DEFECT
 
     def decide_play(self, exchange_partner : 'PDTAgent') -> None:
+        self.paired = True
+
         if exchange_partner.newcomer or self.newcomer or self.in_market:
             self.stranger_partner = True
         else:
@@ -110,8 +116,6 @@ class PDTAgent(Agent):
         self.cumulative_payoff += payoff
 
     def update_behaviour(self):
-        # TODO: Do not update when the agent is not paired up at all.
-        # TODO: Make sure the role model is not self.
         def stochastic_learning(prob: float, payoff: float) -> float:
             if payoff >= 0:
                 return prob + (1 - prob) * payoff
@@ -119,7 +123,9 @@ class PDTAgent(Agent):
                 return prob + prob * payoff
 
         role_model = self.model.network.get_role_model(self.neighbourhood)
-        if role_model is not None and self.random.random() > 0.5:
+        social_learning = role_model is not None and role_model is not self
+
+        if social_learning and self.random.random() > 0.5:
             self.location_prob = role_model.location_prob
         elif self.in_market == False:
             self.location_prob = 1 - \
@@ -128,7 +134,7 @@ class PDTAgent(Agent):
             self.location_prob = stochastic_learning(
                 self.location_prob, self.payoff)
 
-        if role_model is not None and self.random.random() > 0.5:
+        if social_learning and self.random.random() > 0.5:
             self.signal_reading_prob = role_model.signal_reading_prob
         elif self.read_signal == False:
             self.signal_reading_prob = 1 - \
@@ -137,7 +143,7 @@ class PDTAgent(Agent):
             self.signal_reading_prob = stochastic_learning(
                 self.signal_reading_prob, self.payoff)
 
-        if role_model is not None and self.random.random() > 0.5:
+        if social_learning and self.random.random() > 0.5:
             self.trustworthiness_prob = role_model.trustworthiness_prob
         elif self.pdtchoice == PDTChoice.COOPERATE:
             self.trustworthiness_prob = 1 - \
