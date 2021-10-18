@@ -6,7 +6,7 @@ DATA_PATH = 'data/'
 
 
 N = 1000
-n = 0
+n = 10
 mob_rate = 0.1
 
 

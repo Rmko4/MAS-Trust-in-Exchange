@@ -27,6 +27,15 @@ class PDTAgent(Agent):
         self.payoff = 0
         self.cumulative_payoff = 0
 
+        self.total_payoff = 0
+        self.n_payoffs = 0
+
+        #the learning rate for the reinforcement learning mechanism
+        self.learning_rate = 0.05
+        #wather or not to use the relative reward for learning 
+        self.relative_reward = False
+
+
     def step(self) -> None:
         # Change neighbourhood involuntary
         if self.random.random() < self.model.mobility_rate:
@@ -115,13 +124,20 @@ class PDTAgent(Agent):
     def receive_payoff(self, payoff):
         self.payoff = payoff
         self.cumulative_payoff += payoff
+        self.total_payoff += payoff
+        self.n_payoffs +=1
 
     def update_behaviour(self):
+
         def stochastic_learning(prob: float, payoff: float) -> float:
+            if (self.relative_reward and self.n_payoffs > 0):
+                #Use the relative reward which is the current reward minus the average reward
+                payoff = payoff - self.total_payoff / self.n_payoffs
+
             if payoff >= 0:
-                return prob + (1 - prob) * payoff
+                return prob + self.learning_rate * (1 - prob) * payoff
             else:
-                return prob + prob * payoff
+                return prob + self.learning_rate * prob * payoff
 
         role_model = self.model.network.get_role_model(self.neighbourhood)
         if role_model is not None and self.random.random() > 0.5:

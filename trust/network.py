@@ -36,6 +36,7 @@ class Network:
         agentList = list(agentSet)
         self.model.random.shuffle(agentList)
         
+        #comment by Lukas: What if there is an uneven number of agents?
         for i in range(int(len(agentList)/2)):
             a = agentList[i]
             b = agentList[i + 1]
