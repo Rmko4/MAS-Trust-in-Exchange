@@ -30,7 +30,7 @@ class PDTModel(Model):
     def exit_payoff(self):
         return PDTModel._EXIT_PAYOFF
 
-    def __init__(self, agentClass=MSAgent, N=1000, neighbourhood_size=50, mobility_rate=0.2) -> None:
+    def __init__(self, AgentClass=MSAgent, N=1000, neighbourhood_size=50, mobility_rate=0.2) -> None:
         self.num_agents = N
         self.num_neighbourhoods = int(self.num_agents / neighbourhood_size)
 
@@ -39,13 +39,13 @@ class PDTModel(Model):
 
         self.mobility_rate = mobility_rate
 
-        if type(agentClass) == str:
-            agentClass = getattr(agent, agentClass)
+        if type(AgentClass) == str:
+            AgentClass = getattr(agent, AgentClass)
 
         for i in range(self.num_agents):
             neighbourhood = int(i % self.num_neighbourhoods)
             # TODO: Cluster agent location into neighborhoods of randomly varying size.
-            a = agentClass(i, self, neighbourhood)
+            a = AgentClass(i, self, neighbourhood)
             self.schedule.add(a)
             self.network.add_agent_to_neighbourhood(a, neighbourhood)
 
