@@ -24,7 +24,6 @@ class Network:
 
     def remove_agent_from_market(self, agent: 'PDTAgent') -> None:
         self.market.discard(agent)
-
     def pair_and_play(self) -> None:
         for nbh in self.neighbourhoods:
             agents = [a for a in nbh if a not in self.market]
