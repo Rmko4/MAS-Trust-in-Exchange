@@ -8,7 +8,8 @@ import trust.agent as agent
 from trust.choice import PDTChoice
 from trust.network import Network
 
-
+import scipy.optimize
+scipy.optimize.curve_fit
 class PDTModel(Model):
     _PDT_PAYOFF = {(PDTChoice.DEFECT, PDTChoice.COOPERATE): 1,  # Without opportunity cost
                    (PDTChoice.COOPERATE, PDTChoice.COOPERATE): 0.7,
@@ -30,7 +31,9 @@ class PDTModel(Model):
     def exit_payoff(self):
         return PDTModel._EXIT_PAYOFF
 
-    def __init__(self, AgentClass=MSAgent, N=1000, neighbourhood_size=50, mobility_rate=0.2) -> None:
+    # Can pass any class of agent that implements BaseAgent to AgentClass. Passing a str of the class also suffices: e.g. 'RLAgent'.
+    # kwargs are keyword arguments that are passed on to the __init__ of RLAgent. Check implementation for available args.
+    def __init__(self, AgentClass=MSAgent, N=1000, neighbourhood_size=50, mobility_rate=0.2, **kwargs) -> None:
         self.num_agents = N
         self.num_neighbourhoods = int(self.num_agents / neighbourhood_size)
 
@@ -45,7 +48,7 @@ class PDTModel(Model):
         for i in range(self.num_agents):
             neighbourhood = int(i % self.num_neighbourhoods)
             # TODO: Cluster agent location into neighborhoods of randomly varying size.
-            a = AgentClass(i, self, neighbourhood)
+            a = AgentClass(i, self, neighbourhood, **kwargs)
             self.schedule.add(a)
             self.network.add_agent_to_neighbourhood(a, neighbourhood)
 
@@ -106,7 +109,7 @@ class PDTModel(Model):
     def trust_in_newcomers(self) -> float:
         a_with_newcommers = [
             a for a in self.schedule.agents if a.partern_Is_Newcommer]
-        if len(a_with_newcommers) ==0:
+        if len(a_with_newcommers) == 0:
             return 0
         return len([a for a in a_with_newcommers if a.play]) / len(a_with_newcommers)
 

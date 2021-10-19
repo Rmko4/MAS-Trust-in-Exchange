@@ -28,15 +28,6 @@ class BaseAgent(Agent):
         self.payoff = 0
         self.cumulative_payoff = 0
 
-        self.total_payoff = 0
-        self.n_payoffs = 0
-
-        # The learning rate for the reinforcement learning mechanism
-        self.learning_rate = 1.0
-        # Whether or not to use the relative reward for learning 
-        self.relative_reward = False
-
-
     def step(self) -> None:
         # Change neighbourhood involuntary
         if self.random.random() < self.model.mobility_rate:
@@ -54,7 +45,6 @@ class BaseAgent(Agent):
         self.paired = False
         self.leave_market()
 
-
     def decide_cooperation(self) -> None:
         # Trustworthiness is not model conditionally here,
         # therefore it remains uniform across conditions (neighbourhood or open market)
@@ -62,8 +52,8 @@ class BaseAgent(Agent):
             self.pdtchoice = PDTChoice.COOPERATE
         else:
             self.pdtchoice = PDTChoice.DEFECT
-        
-    def decide_play(self, exchange_partner : 'BaseAgent') -> None:
+
+    def decide_play(self, exchange_partner: 'BaseAgent') -> None:
         raise NotImplementedError
 
     def move(self) -> None:
@@ -90,20 +80,14 @@ class BaseAgent(Agent):
     def receive_payoff(self, payoff):
         self.payoff = payoff
         self.cumulative_payoff += payoff
-        self.total_payoff += payoff
-        self.n_payoffs +=1
+
+    def stochastic_learning(self, prob: float, payoff: float, ) -> float:
+        if payoff >= 0:
+            return prob + (1 - prob) * payoff
+        else:
+            return prob + prob * payoff
 
     def update_behaviour(self):
-
-        def stochastic_learning(prob: float, payoff: float) -> float:
-            if (self.relative_reward and self.n_payoffs > 0):
-                #Use the relative reward which is the current reward minus the average reward
-                payoff = payoff - self.total_payoff / self.n_payoffs
-
-            if payoff >= 0:
-                return prob + self.learning_rate * (1 - prob) * payoff
-            else:
-                return prob + self.learning_rate * prob * payoff
 
         role_model = self.model.network.get_role_model(self.neighbourhood)
         social_learning = role_model is not None and role_model is not self
@@ -112,46 +96,42 @@ class BaseAgent(Agent):
             self.location_prob = role_model.location_prob
         elif self.in_market == False:
             self.location_prob = 1 - \
-                stochastic_learning(1 - self.location_prob, self.payoff)
+                self.stochastic_learning(1 - self.location_prob, self.payoff)
         else:
-            self.location_prob = stochastic_learning(
+            self.location_prob = self.stochastic_learning(
                 self.location_prob, self.payoff)
 
         if social_learning and self.random.random() > 0.5:
             self.trust_prob = role_model.trust_prob
         elif self.read_signal == False:
             self.trust_prob = 1 - \
-                stochastic_learning(1 - self.trust_prob, self.payoff)
+                self.stochastic_learning(1 - self.trust_prob, self.payoff)
         else:
-            self.trust_prob = stochastic_learning(
+            self.trust_prob = self.stochastic_learning(
                 self.trust_prob, self.payoff)
 
         if social_learning and self.random.random() > 0.5:
             self.trustworthiness_prob = role_model.trustworthiness_prob
         elif self.pdtchoice == PDTChoice.COOPERATE:
             self.trustworthiness_prob = 1 - \
-                stochastic_learning(
+                self.stochastic_learning(
                     1 - self.trustworthiness_prob, self.payoff)
         else:
-            self.trustworthiness_prob = stochastic_learning(
+            self.trustworthiness_prob = self.stochastic_learning(
                 self.trustworthiness_prob, self.payoff)
+
 
 class MSAgent(BaseAgent):
     def decide_play(self, exchange_partner) -> None:
         self.paired = True
-        
+
         if self.random.random() < self.trust_prob:
             self.play = True
         else:
             self.play = False
 
-
-
 class WHAgent(BaseAgent):
-    def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int) -> None:
-        super().__init__(unique_id, model, neighbourhood)
-
-    def decide_play(self, exchange_partner : 'WHAgent') -> None:
+    def decide_play(self, exchange_partner: 'WHAgent') -> None:
         self.paired = True
 
         if exchange_partner.newcomer or self.newcomer or self.in_market:
@@ -187,3 +167,32 @@ class WHAgent(BaseAgent):
             # Returns opposite signal of the PDT choice
             return PDTChoice.COOPERATE if self.pdtchoice == PDTChoice.DEFECT else PDTChoice.DEFECT
 
+
+class RLAgent(WHAgent):
+    def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int,
+                 learning_rate: float, relative_reward: bool) -> None:
+        super().__init__(unique_id, model, neighbourhood)
+
+        self.total_payoff = 0
+        self.n_payoffs = 0
+
+        # The learning rate for the reinforcement learning mechanism
+        self.learning_rate = learning_rate
+        # Whether or not to use the relative reward for learning
+        self.relative_reward = relative_reward
+
+    def receive_payoff(self, payoff):
+        super().receive_payoff(payoff)
+        self.total_payoff += payoff
+        self.n_payoffs += 1
+
+    # Overrides default stochastic learning behaviour
+    def stochastic_learning(self, prob: float, payoff: float) -> float:
+        if (self.relative_reward and self.n_payoffs > 0):
+            # Use the relative reward which is the current reward minus the average reward
+            payoff = payoff - self.total_payoff / self.n_payoffs
+
+        if payoff >= 0:
+            return prob + self.learning_rate * (1 - prob) * payoff
+        else:
+            return prob + self.learning_rate * prob * payoff
