@@ -28,6 +28,15 @@ class BaseAgent(Agent):
         self.payoff = 0
         self.cumulative_payoff = 0
 
+        self.total_payoff = 0
+        self.n_payoffs = 0
+
+        #the learning rate for the reinforcement learning mechanism
+        self.learning_rate = 0.05
+        #wather or not to use the relative reward for learning 
+        self.relative_reward = False
+
+
     def step(self) -> None:
         # Change neighbourhood involuntary
         if self.random.random() < self.model.mobility_rate:
@@ -53,9 +62,43 @@ class BaseAgent(Agent):
             self.pdtchoice = PDTChoice.COOPERATE
         else:
             self.pdtchoice = PDTChoice.DEFECT
+<<<<<<< HEAD
         
     def decide_play(self, exchange_partner : 'BaseAgent') -> None:
         raise NotImplementedError
+=======
+
+    def decide_play(self, exchange_partner : 'PDTAgent') -> None:
+        self.paired = True
+
+        #needed to plot results
+        if not self.in_market and (exchange_partner.newcomer or self.newcomer) :
+            self.partern_Is_Newcommer = True
+        else:
+            self.partern_Is_Newcommer = False
+
+        if exchange_partner.newcomer or self.newcomer or self.in_market:
+            self.stranger_partner = True
+        else:
+            self.stranger_partner = False
+
+        if self.random.random() < self.signal_reading_prob:
+            # Signal reading
+            self.read_signal = True
+            signal = exchange_partner.get_signal()
+            if signal == PDTChoice.COOPERATE:
+                self.play = True
+            else:
+                self.play = False
+        else:
+            # Parochialism
+            self.read_signal = False
+            if self.stranger_partner:
+                # Also assume self as newcomer to distrust strangers
+                self.play = False
+            else:
+                self.play = True
+>>>>>>> 54bbddf09fd8d97fb76e767b5163fd296ed1d87b
 
     def move(self) -> None:
         new_nbh = self.random.randint(0, self.model.num_neighbourhoods - 1)
@@ -81,13 +124,20 @@ class BaseAgent(Agent):
     def receive_payoff(self, payoff):
         self.payoff = payoff
         self.cumulative_payoff += payoff
+        self.total_payoff += payoff
+        self.n_payoffs +=1
 
     def update_behaviour(self):
+
         def stochastic_learning(prob: float, payoff: float) -> float:
+            if (self.relative_reward and self.n_payoffs > 0):
+                #Use the relative reward which is the current reward minus the average reward
+                payoff = payoff - self.total_payoff / self.n_payoffs
+
             if payoff >= 0:
-                return prob + (1 - prob) * payoff
+                return prob + self.learning_rate * (1 - prob) * payoff
             else:
-                return prob + prob * payoff
+                return prob + self.learning_rate * prob * payoff
 
         role_model = self.model.network.get_role_model(self.neighbourhood)
         social_learning = role_model is not None and role_model is not self
@@ -110,7 +160,8 @@ class BaseAgent(Agent):
             self.trust_prob = stochastic_learning(
                 self.trust_prob, self.payoff)
 
-        if social_learning and self.random.random() > 0.5:
+        #Comment by Lukas: Is it right that the trustworthiness is always updated, even if the game of PF was not played? 
+        if role_model is not None and self.random.random() > 0.5:
             self.trustworthiness_prob = role_model.trustworthiness_prob
         elif self.pdtchoice == PDTChoice.COOPERATE:
             self.trustworthiness_prob = 1 - \

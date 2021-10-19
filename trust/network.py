@@ -24,7 +24,6 @@ class Network:
 
     def remove_agent_from_market(self, agent: 'BaseAgent') -> None:
         self.market.discard(agent)
-
     def pair_and_play(self) -> None:
         for nbh in self.neighbourhoods:
             agents = [a for a in nbh if a not in self.market]
@@ -36,6 +35,7 @@ class Network:
         agentList = list(agentSet)
         self.model.random.shuffle(agentList)
 
+    
         for i in range(int(len(agentList)/2)):
             a = agentList[2*i]
             b = agentList[2*i + 1]
