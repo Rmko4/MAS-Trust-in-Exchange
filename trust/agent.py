@@ -81,7 +81,7 @@ class BaseAgent(Agent):
         self.payoff = payoff
         self.cumulative_payoff += payoff
 
-    def stochastic_learning(self, prob: float, payoff: float, ) -> float:
+    def stochastic_learning(self, prob: float, payoff: float) -> float:
         if payoff >= 0:
             return prob + (1 - prob) * payoff
         else:
@@ -182,7 +182,7 @@ class RLAgent(WHAgent):
         self.relative_reward = relative_reward
 
     def receive_payoff(self, payoff):
-        super().receive_payoff(payoff)
+        super().receive_payoff()
         self.total_payoff += payoff
         self.n_payoffs += 1
 
