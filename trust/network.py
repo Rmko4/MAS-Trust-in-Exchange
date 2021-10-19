@@ -36,6 +36,7 @@ class Network:
         agentList = list(agentSet)
         self.model.random.shuffle(agentList)
 
+    
         for i in range(int(len(agentList)/2)):
             a = agentList[2*i]
             b = agentList[2*i + 1]

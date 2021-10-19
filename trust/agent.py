@@ -28,6 +28,15 @@ class PDTAgent(Agent):
         self.payoff = 0
         self.cumulative_payoff = 0
 
+        self.total_payoff = 0
+        self.n_payoffs = 0
+
+        #the learning rate for the reinforcement learning mechanism
+        self.learning_rate = 0.05
+        #wather or not to use the relative reward for learning 
+        self.relative_reward = False
+
+
     def step(self) -> None:
         # Change neighbourhood involuntary
         if self.random.random() < self.model.mobility_rate:
@@ -56,6 +65,12 @@ class PDTAgent(Agent):
 
     def decide_play(self, exchange_partner : 'PDTAgent') -> None:
         self.paired = True
+
+        #needed to plot results
+        if not self.in_market and (exchange_partner.newcomer or self.newcomer) :
+            self.partern_Is_Newcommer = True
+        else:
+            self.partern_Is_Newcommer = False
 
         if exchange_partner.newcomer or self.newcomer or self.in_market:
             self.stranger_partner = True
@@ -114,13 +129,20 @@ class PDTAgent(Agent):
     def receive_payoff(self, payoff):
         self.payoff = payoff
         self.cumulative_payoff += payoff
+        self.total_payoff += payoff
+        self.n_payoffs +=1
 
     def update_behaviour(self):
+
         def stochastic_learning(prob: float, payoff: float) -> float:
+            if (self.relative_reward and self.n_payoffs > 0):
+                #Use the relative reward which is the current reward minus the average reward
+                payoff = payoff - self.total_payoff / self.n_payoffs
+
             if payoff >= 0:
-                return prob + (1 - prob) * payoff
+                return prob + self.learning_rate * (1 - prob) * payoff
             else:
-                return prob + prob * payoff
+                return prob + self.learning_rate * prob * payoff
 
         role_model = self.model.network.get_role_model(self.neighbourhood)
         social_learning = role_model is not None and role_model is not self
@@ -143,7 +165,8 @@ class PDTAgent(Agent):
             self.signal_reading_prob = stochastic_learning(
                 self.signal_reading_prob, self.payoff)
 
-        if social_learning and self.random.random() > 0.5:
+        #Comment by Lukas: Is it right that the trustworthiness is always updated, even if the game of PF was not played? 
+        if role_model is not None and self.random.random() > 0.5:
             self.trustworthiness_prob = role_model.trustworthiness_prob
         elif self.pdtchoice == PDTChoice.COOPERATE:
             self.trustworthiness_prob = 1 - \
