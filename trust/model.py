@@ -115,4 +115,4 @@ class PDTModel(Model):
         return len([a for a in a_with_newcommers if a.play]) / len(a_with_newcommers)
 
     def signal_reading(self) -> float:
-        return np.mean([a.signal_reading_prob for a in self.schedule.agents])
+        return np.mean([a.trust_prob for a in self.schedule.agents])

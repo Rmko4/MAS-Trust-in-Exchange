@@ -135,7 +135,12 @@ class WHAgent(BaseAgent):
     def decide_play(self, exchange_partner: 'WHAgent') -> None:
         self.paired = True
 
-        if exchange_partner.newcomer or self.newcomer or self.in_market:
+        if not self.in_market and (exchange_partner.newcomer or self.newcomer):
+            self.partern_Is_Newcommer = True
+        else:
+            self.partern_Is_Newcommer = False
+
+        if exchange_partner.newcomer or self.newcomer:
             self.stranger_partner = True
         else:
             self.stranger_partner = False
