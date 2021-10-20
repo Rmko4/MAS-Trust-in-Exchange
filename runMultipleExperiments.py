@@ -10,8 +10,8 @@ n_min = 10
 n_max = 100
 n_stepsize = 10
 mob_rate_min = 0
-mob_rate_max = 0.3
-mob_rate_stepsize = 0.03
+mob_rate_max = 1
+mob_rate_stepsize = 0.1
 
 if (len(sys.argv) == 1):
     print("Please specify output file")
