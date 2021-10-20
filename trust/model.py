@@ -33,7 +33,8 @@ class PDTModel(Model):
 
     # Can pass any class of agent that implements BaseAgent to AgentClass. Passing a str of the class also suffices: e.g. 'RLAgent'.
     # kwargs are keyword arguments that are passed on to the __init__ of RLAgent. Check implementation for available args.
-    def __init__(self, AgentClass: Union[str, type] = MSAgent, N=1000, neighbourhood_size=50, mobility_rate=0.2, **kwargs) -> None:
+    def __init__(self, AgentClass: Union[str, type] = MSAgent, N: int = 1000,
+                 neighbourhood_size: int = 50, mobility_rate: float = 0.2, **kwargs) -> None:
         self.num_agents = N
         self.num_neighbourhoods = int(self.num_agents / neighbourhood_size)
 

@@ -130,6 +130,7 @@ class MSAgent(BaseAgent):
         else:
             self.play = False
 
+
 class WHAgent(BaseAgent):
     def decide_play(self, exchange_partner: 'WHAgent') -> None:
         self.paired = True
@@ -170,7 +171,7 @@ class WHAgent(BaseAgent):
 
 class RLAgent(WHAgent):
     def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int,
-                 learning_rate: float, relative_reward: bool) -> None:
+                 learning_rate: float, relative_reward: bool = False) -> None:
         super().__init__(unique_id, model, neighbourhood)
 
         self.total_payoff = 0
@@ -182,7 +183,7 @@ class RLAgent(WHAgent):
         self.relative_reward = relative_reward
 
     def receive_payoff(self, payoff):
-        super().receive_payoff()
+        super().receive_payoff(payoff)
         self.total_payoff += payoff
         self.n_payoffs += 1
 
