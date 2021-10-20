@@ -182,7 +182,7 @@ class RLAgent(WHAgent):
         self.relative_reward = relative_reward
 
     def receive_payoff(self, payoff):
-        super().receive_payoff()
+        super().receive_payoff(payoff)
         self.total_payoff += payoff
         self.n_payoffs += 1
 
