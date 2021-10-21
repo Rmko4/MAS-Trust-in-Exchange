@@ -1,15 +1,14 @@
-import pandas as pd
-import copy
+''' This file starts the multi-agent system model.
+    Also, it prints the values for the mobility rate, neighbourhood size an total number of agents.
+    After the model has run, the results will be printed.
+'''
 from trust.model import PDTModel
 
 DATA_PATH = 'data/'
 
-
 N = 1000
 n = 10
 mob_rate = 0.1
-
-
 
 print("Number of agents: " + str(N))
 print("Neighbourhood size: " + str(n))
@@ -21,4 +20,3 @@ df = model.datacollector.get_model_vars_dataframe()
 
 print(df.describe())
 df.to_csv(DATA_PATH + 'data.csv')
-
