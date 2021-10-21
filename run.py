@@ -1,4 +1,4 @@
-''' This file starts the multi-agent system model.
+''' This runfile starts the multi-agent system model.
     Also, it prints the values for the mobility rate, neighbourhood size an total number of agents.
     After the model has run, the results will be printed.
 '''

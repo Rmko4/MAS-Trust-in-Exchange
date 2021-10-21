@@ -1,3 +1,5 @@
+""" This file contains the classes defining different types of agents.
+"""
 from typing import TYPE_CHECKING
 from mesa import Agent
 
@@ -7,16 +9,26 @@ if TYPE_CHECKING:
 
 
 class BaseAgent(Agent):
+    """ Defines a base agent, which is an implementation of an Agent as defined by the MESA module.
+    """
     def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int) -> None:
+        """ Initializes the baseAgent. Saves the neighbourhood that the agent is in, and does not
+            mark it as a newcomer. Initializs the propensity to read signals (antagonist
+            parochialism), propensity to cooperate and propensity to enter the open market (over
+            staying in the neighbourhood) to a random value between 0.0 and 1.0. It also sets
+            the variable keeping track of the cumulative payoff to zero. This variable will be
+            updated after every interaction with another agent, based on the outcome of the
+            prisoners' dilemma (or the exit cost if the agents decides not to play).
+        """
         super().__init__(unique_id, model)
         self.neighbourhood = neighbourhood
         self.newcomer = False
 
-        # Equivalent to the propensity to read signals (antagonist parochialism)
+        # Equivalent to the propensity to read signals
         self.trust_prob = self.random.random()
         # Propensity to cooperate (over defect)
         self.trustworthiness_prob = self.random.random()
-        # Propensity to enter the open market (over staying in the neighbourhood)
+        # Propensity to enter the open market
         self.location_prob = self.random.random()
 
         self.play = True
@@ -29,6 +41,11 @@ class BaseAgent(Agent):
         self.cumulative_payoff = 0
 
     def step(self) -> None:
+        """ Every step, the agent moves to a new neigbhourhood with a certain probability
+            as defined by the mobility rate. Also, the agent chooses (based on the location
+            probability) wether to stay in the neighbourhood or move to the global market
+            for its next interaction.
+        """
         # Change neighbourhood involuntary
         if self.random.random() < self.model.mobility_rate:
             self.move()
@@ -40,12 +57,19 @@ class BaseAgent(Agent):
             self.enter_market()
 
     def finalize(self) -> None:
+        """ If the agent is paired with another agent, it will update its behaviour (i.e. its
+            decision to play or exit and to cooperate or defect in the prisoners' dilema).
+            Afterwards, the variable paired is reset to False and the agent will leave the
+            global market (if it was there).
+        """
         if self.paired:
             self.update_behaviour()
         self.paired = False
         self.leave_market()
 
     def decide_cooperation(self) -> None:
+        """ 
+        """
         # Trustworthiness is not model conditionally here,
         # therefore it remains uniform across conditions (neighbourhood or open market)
         if self.random.random() < self.trustworthiness_prob:

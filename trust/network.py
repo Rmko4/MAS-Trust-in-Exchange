@@ -1,3 +1,6 @@
+""" This file contains the definition of the Network class, which holds all information
+    regarding the agents and their location.
+"""
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -6,13 +9,24 @@ if TYPE_CHECKING:
 
 
 class Network:
+    """ Defines the Network.
+    """
     def __init__(self, model: 'PDTModel', num_neighbourhoods) -> None:
+        """ Initializes the Network. Takes the model and the amount of neighbourhoods as parameters.
+            The market, as well as the list of neighbourhoods, is initialized as empty sets
+            representing that no agents are currently present in the market and neighbourhoods
+            respectively.
+        """
         self.model = model
         self.num_neighbourhoods = num_neighbourhoods
         self.market = set()
         self.neighbourhoods = [set() for _ in range(self.num_neighbourhoods)]
 
     def add_agent_to_neighbourhood(self, agent: 'BaseAgent', neighbourhood: int):
+        """ Removes an agent (specified in the passed agent parameter) from its current
+            neighbourhood and adds it to the neighbouhood specified in the passed neighbourhood
+            parameter.
+        """
         old_nbh = agent.neighbourhood
         self.neighbourhoods[old_nbh].discard(agent)
 
@@ -20,11 +34,22 @@ class Network:
         agent.neighbourhood = neighbourhood
 
     def add_agent_to_market(self, agent: 'BaseAgent') -> None:
+        """ Adds the agent passed in the parameters to the global market. Please note that the
+            agent remains in the same neighbourhood.
+        """
         self.market.add(agent)
 
     def remove_agent_from_market(self, agent: 'BaseAgent') -> None:
+        """ Removes the agent passed in the parameters to the global market. Please note that the
+            agent remains in the same neighbourhood.
+        """
         self.market.discard(agent)
+
     def pair_and_play(self) -> None:
+        """ Calls the method to play the prisoners dilemma for all neigbhourhoods and the global
+            market. Note that an agent can only play in either their neighbourhood, or on the global
+            market and not both.
+        """
         for nbh in self.neighbourhoods:
             agents = [a for a in nbh if a not in self.market]
             self.play_PDT(agents)
@@ -32,13 +57,19 @@ class Network:
         self.play_PDT(self.market)
 
     def play_PDT(self, agentSet: 'set[BaseAgent]') -> None:
-        agentList = list(agentSet)
-        self.model.random.shuffle(agentList)
+        """ Randomly pairs all agents in the given agentset and lets them play the prisoners' dilemma.
 
-    
-        for i in range(int(len(agentList)/2)):
-            a = agentList[2*i]
-            b = agentList[2*i + 1]
+            Once the agents have been matched with an agent, both agents decide whether to play the
+            game. After that, both agents decide
+
+            TODO
+        """
+        agent_list = list(agentSet)
+        self.model.random.shuffle(agent_list)
+
+        for i in range(int(len(agent_list)/2)):
+            a = agent_list[2*i]
+            b = agent_list[2*i + 1]
 
             a.decide_cooperation()
             b.decide_cooperation()
@@ -49,7 +80,7 @@ class Network:
             if a.play and b.play:
                 # Both agents trust so PD is played
                 opportunity_cost = self.model.get_opportunity_cost(
-                    len(agentList))
+                    len(agent_list))
                 a_payoff = self.model.get_pdt_payoff(
                     (a.pdtchoice, b.pdtchoice), opportunity_cost)
                 b_payoff = self.model.get_pdt_payoff(
@@ -62,6 +93,9 @@ class Network:
                 b.receive_payoff(self.model.exit_payoff)
 
     def get_role_model(self, neighbourhood: int) -> 'BaseAgent':
+        """ Returns most successfull agent (considering the cumulative payoff) in the
+            neighbourhood as passed in the parameters.
+        """
         return max(self.neighbourhoods[neighbourhood], key=lambda a: a.cumulative_payoff)
         # potential_models = [a for a in self.neighbourhoods[neighbourhood] if not a.newcomer]
         # if len(potential_models) == 0:

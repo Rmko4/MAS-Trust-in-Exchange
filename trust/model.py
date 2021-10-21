@@ -112,29 +112,42 @@ class PDTModel(Model):
         self.running = False
 
     def market_size(self) -> float:
-        """ Returns the percentage of agent currently in the global market (out of the total amount of agents).
+        """ Returns the percentage out of all agents which currently is in the global market.
         """
         return len([a for a in self.schedule.agents if a.in_market]) / self.num_agents
 
     def trust_rate(self) -> float:
-        """ 
+        """ Returns the percentage out of all agents which decided to play (so, trust) the prisoners'
+            dilemma with the agent they have been matched with.
         """
         return len([a for a in self.schedule.agents if a.play]) / self.num_agents
 
     def cooperating_agents(self) -> float:
+        """ Returns the percentage out of all agents that played the prisoners' dilemma with the agent they have
+            been matched with and decided to cooperate.
+        """
         return len([a for a in self.schedule.agents if a.pdtchoice == PDTChoice.COOPERATE]) / self.num_agents
 
     def trust_in_strangers(self) -> float:
+        """ Returns the percentage out of all agents matched with a stranger that have decided to play (so, trust)
+            the prisoners' dilemma with the agent they have been matched with.
+        """
         a_with_stranger_partners = [
             a for a in self.schedule.agents if a.stranger_partner]
         return len([a for a in a_with_stranger_partners if a.play]) / len(a_with_stranger_partners)
 
     def trust_in_neighbors(self) -> float:
+        """ Returns the percentage out of all agents matched with a neighbour that have decided to play (so, trust)
+            the prisoners' dilemma with the agent they have been matched with.
+        """
         a_with_neighbor_partners = [
             a for a in self.schedule.agents if not a.in_market]
         return len([a for a in a_with_neighbor_partners if a.play]) / len(a_with_neighbor_partners)
 
     def trust_in_newcomers(self) -> float:
+        """ Returns the percentage out of all agents matched with a newcommer of the neighbourhood that have decided
+            to play (so, trust) the prisoners' dilemma with the agent they have been matched with.
+        """
         a_with_newcommers = [
             a for a in self.schedule.agents if a.partern_Is_Newcommer]
         if len(a_with_newcommers) == 0:
@@ -142,4 +155,6 @@ class PDTModel(Model):
         return len([a for a in a_with_newcommers if a.play]) / len(a_with_newcommers)
 
     def signal_reading(self) -> float:
+        """ Returns the mean value of the probability to trust another agent amongst all agents.
+        """
         return np.mean([a.trust_prob for a in self.schedule.agents])
