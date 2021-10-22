@@ -90,7 +90,7 @@ class BaseAgent(Agent):
 
     def move(self) -> None:
         """ Moves an agent to a different neighbourhood than it is in now, also marks
-            the agent as a newcomer and resets its cumulative payoff. 
+            the agent as a newcomer and resets its cumulative payoff.
         """
         new_nbh = self.random.randint(0, self.model.num_neighbourhoods - 1)
         # Ensure that it won't stay in the same neighbourhood
@@ -246,13 +246,10 @@ class WHAgent(BaseAgent):
         """ Returns the choice the agent makes on whether to cooperate or defect in the
             prisoners' dilemma, based on the reading of the signals the other agent
             'shows'.
-        
+
             At a trustworthiness of 0.5 the agents is ambivalent.
             At either 0 or 1 the signal is assumed to be perfect.
             The signal correctness is linearly interpolated between those values.
-
-            TODO: We don't do anything with the actual signals of the other agent right?
-            Feels as if this doens't correctly implements the reading of signals then
         """
         signal_correctness = 0.5 + abs(self.trustworthiness_prob - 0.5)
         if self.random.random() < signal_correctness:
