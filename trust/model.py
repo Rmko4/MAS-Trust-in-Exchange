@@ -149,7 +149,7 @@ class PDTModel(Model):
             to play (so, trust) the prisoners' dilemma with the agent they have been matched with.
         """
         a_with_newcommers = [
-            a for a in self.schedule.agents if a.partern_Is_Newcommer]
+            a for a in self.schedule.agents if a.partern_is_newcommer]
         if len(a_with_newcommers) == 0:
             return 0
         return len([a for a in a_with_newcommers if a.play]) / len(a_with_newcommers)

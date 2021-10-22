@@ -68,19 +68,30 @@ class BaseAgent(Agent):
         self.leave_market()
 
     def decide_cooperation(self) -> None:
-        """ 
+        """ Decides whether the agent will cooperate or defect in the current prisoners' dilemma.
+            This is decided based on the agents' value for the probability of being trustworthy.
+
+            As this function is equal for all types of agent, this remains uniform across the
+            conditions of being in the neighbourhood versus the global market.
         """
-        # Trustworthiness is not model conditionally here,
-        # therefore it remains uniform across conditions (neighbourhood or open market)
         if self.random.random() < self.trustworthiness_prob:
             self.pdtchoice = PDTChoice.COOPERATE
         else:
             self.pdtchoice = PDTChoice.DEFECT
 
     def decide_play(self, exchange_partner: 'BaseAgent') -> None:
+        """ The dicison whether or not to play the prisoners' dilemma is dependent on the
+            type of agent and thus not implemented for the base agent.
+
+            Returns a NotImplementedError in case the type of agent is not specified (this
+            should not happen).
+        """
         raise NotImplementedError
 
     def move(self) -> None:
+        """ Moves an agent to a different neighbourhood than it is in now, also marks
+            the agent as a newcomer and resets its cumulative payoff. 
+        """
         new_nbh = self.random.randint(0, self.model.num_neighbourhoods - 1)
         # Ensure that it won't stay in the same neighbourhood
         if new_nbh >= self.neighbourhood:
@@ -91,43 +102,60 @@ class BaseAgent(Agent):
         self.cumulative_payoff = 0
 
     def stay(self) -> None:
+        """ Removes the newcomer mark from an agent.
+        """
         self.newcomer = False
 
     def enter_market(self) -> None:
+        """ Adds the agent to the networks global market.
+        """
         self.model.network.add_agent_to_market(self)
         self.in_market = True
 
     def leave_market(self) -> None:
+        """ Removes the agent from the networks global market.
+        """
         self.model.network.remove_agent_from_market(self)
         self.in_market = False
 
     def receive_payoff(self, payoff):
+        """ Saves the payoff of the current step and adds it to the agent's cumulative payoff.
+        """
         self.payoff = payoff
         self.cumulative_payoff += payoff
 
     def stochastic_learning(self, prob: float, payoff: float) -> float:
+        """ Calculates and returns a new value according to the stochastic learning rate
+            given the probability and payoff.
+        """
         if payoff >= 0:
             return prob + (1 - prob) * payoff
         else:
             return prob + prob * payoff
 
     def update_behaviour(self):
+        """ Updates the behaviour of the agent.
 
+            Updates the role model of the agent, i.e. the most successfull agent of the
+            neighbourhood. Also, the values for the propensity to enter the global market,
+            propensity to read signals (I.e. base its decision to either cooperate or
+            defect on reading signals instead of Parochialism) and propensity to either
+            cooperate or defect are updated.
+        """
         role_model = self.model.network.get_role_model(self.neighbourhood)
         social_learning = role_model is not None and role_model is not self
 
         if social_learning and self.random.random() > 0.5:
             self.location_prob = role_model.location_prob
-        elif self.in_market == False:
+        elif not self.in_market:
             self.location_prob = 1 - \
                 self.stochastic_learning(1 - self.location_prob, self.payoff)
         else:
-            self.location_prob = self.stochastic_learning(
-                self.location_prob, self.payoff)
+            self.location_prob = self.stochastic_learning(self.location_prob, self.payoff)
 
         if social_learning and self.random.random() > 0.5:
             self.trust_prob = role_model.trust_prob
-        elif self.read_signal == False:
+        elif not self.read_signal:
             self.trust_prob = 1 - \
                 self.stochastic_learning(1 - self.trust_prob, self.payoff)
         else:
@@ -138,15 +166,23 @@ class BaseAgent(Agent):
             self.trustworthiness_prob = role_model.trustworthiness_prob
         elif self.pdtchoice == PDTChoice.COOPERATE:
             self.trustworthiness_prob = 1 - \
-                self.stochastic_learning(
-                    1 - self.trustworthiness_prob, self.payoff)
+                self.stochastic_learning(1 - self.trustworthiness_prob, self.payoff)
         else:
             self.trustworthiness_prob = self.stochastic_learning(
                 self.trustworthiness_prob, self.payoff)
 
 
 class MSAgent(BaseAgent):
+    """ Implementation of the Macy and Sato agent, extend a BaseAgent.
+
+        For this agent, the dicision to either play or walk away from an opportunity to play
+        the prisoners' dilemma with the agent he is matched with is based on the propensity
+        to read signals.
+    """
     def decide_play(self, exchange_partner) -> None:
+        """ Updates the agents decision to play or exit a prisoners' dilemma based
+            on its propensity to trust another agent.
+        """
         self.paired = True
 
         if self.random.random() < self.trust_prob:
@@ -156,13 +192,33 @@ class MSAgent(BaseAgent):
 
 
 class WHAgent(BaseAgent):
+    """ Implementation of the Will and Hegselmann agent, extends a BaseAgent.
+
+        For this agent, the dicision to either play or walk away from an opportunity to play
+        the prisoners' dilemma with the agent he is matched with is different for known agents
+        and stangers.
+    """
     def decide_play(self, exchange_partner: 'WHAgent') -> None:
+        """ Updates the agents decision to play or exit a prisoners' dilemma.
+
+            First, the agent decides to either base its decision on signal reading
+            or parochialism based on the agents' propensity to trust another agent.
+
+            If the agent decides to read the signals of the other agent, the outcome of
+            the signal reading determines the agents' choice to either cooperate or defect.
+
+            If the agent decides to act parochial, it will only trust the other agent if
+            it knows its opponent (so it is not on the global market, and the opponent
+            is not a newcomer to the neighbourhood, and the agent itself is not a newcomer
+            to the neighbourhood).
+        """
         self.paired = True
 
+        # TODO: We never use the value of self.partner_is_newcomer right...?
         if not self.in_market and (exchange_partner.newcomer or self.newcomer):
-            self.partern_Is_Newcommer = True
+            self.partern_is_newcommer = True
         else:
-            self.partern_Is_Newcommer = False
+            self.partern_is_newcommer = False
 
         if exchange_partner.newcomer or self.newcomer:
             self.stranger_partner = True
@@ -187,18 +243,31 @@ class WHAgent(BaseAgent):
                 self.play = True
 
     def get_signal(self) -> PDTChoice:
-        # At a trustworthiness of 0.5 the agents is ambivalent.
-        # At either 0 or 1 the signal is assumed to be perfect.
-        # The signal correctness is linearly interpolated between those values
+        """ Returns the choice the agent makes on whether to cooperate or defect in the
+            prisoners' dilemma, based on the reading of the signals the other agent
+            'shows'.
+        
+            At a trustworthiness of 0.5 the agents is ambivalent.
+            At either 0 or 1 the signal is assumed to be perfect.
+            The signal correctness is linearly interpolated between those values.
+
+            TODO: We don't do anything with the actual signals of the other agent right?
+            Feels as if this doens't correctly implements the reading of signals then
+        """
         signal_correctness = 0.5 + abs(self.trustworthiness_prob - 0.5)
         if self.random.random() < signal_correctness:
             return self.pdtchoice
-        else:
-            # Returns opposite signal of the PDT choice
-            return PDTChoice.COOPERATE if self.pdtchoice == PDTChoice.DEFECT else PDTChoice.DEFECT
+
+        # Returns opposite signal of the PDT choice
+        return PDTChoice.COOPERATE if self.pdtchoice == PDTChoice.DEFECT else PDTChoice.DEFECT
 
 
 class RLAgent(WHAgent):
+    """ Implementation of the Reinforcement Learning agent, extends a WHAgent.
+
+        Similar to the WHAgent, though the learning rate is no longer stochastic
+        but based on reinforcement learning.
+    """
     def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int,
                  learning_rate: float, relative_reward: bool = False) -> None:
         super().__init__(unique_id, model, neighbourhood)
@@ -212,12 +281,18 @@ class RLAgent(WHAgent):
         self.relative_reward = relative_reward
 
     def receive_payoff(self, payoff):
+        """ Saves the payoff of the current step and adds it to the agent's cumulative payoff.
+            Also updates the total payoff value, and the total amount of payoffs.
+        """
         super().receive_payoff(payoff)
         self.total_payoff += payoff
         self.n_payoffs += 1
 
     # Overrides default stochastic learning behaviour
     def stochastic_learning(self, prob: float, payoff: float) -> float:
+        """ Calculates and returns a new value according to the reinforcement learning rate
+            given the probability, current payoff and average payoff.
+        """
         if (self.relative_reward and self.n_payoffs > 0):
             # Use the relative reward which is the current reward minus the average reward
             payoff = payoff - self.total_payoff / self.n_payoffs
