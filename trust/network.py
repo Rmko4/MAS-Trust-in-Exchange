@@ -2,6 +2,7 @@
     regarding the agents and their location.
 """
 from typing import TYPE_CHECKING
+from trust.agent import GossipAgent
 
 if TYPE_CHECKING:
     from trust.agent import BaseAgent
@@ -57,7 +58,8 @@ class Network:
         self.play_PDT(self.market)
 
     def play_PDT(self, agentSet: 'set[BaseAgent]') -> None:
-        """ Randomly pairs all agents in the given agentset and lets them play the prisoners' dilemma.
+        """ Randomly pairs all agents in the given agentset and lets them play the prisoners'
+            dilemma.
 
             Once the agents have been matched with an agent, both agents decide whether to play the
             game. After that, both agents decide
@@ -68,29 +70,35 @@ class Network:
         self.model.random.shuffle(agent_list)
 
         for i in range(int(len(agent_list)/2)):
-            a = agent_list[2*i]
-            b = agent_list[2*i + 1]
+            agent_a = agent_list[2*i]
+            agent_b = agent_list[2*i + 1]
 
-            a.decide_cooperation()
-            b.decide_cooperation()
+            agent_a.decide_cooperation()
+            agent_b.decide_cooperation()
 
-            a.decide_play(b)
-            b.decide_play(a)
+            agent_a.decide_play(agent_b)
+            agent_b.decide_play(agent_a)
 
-            if a.play and b.play:
+            if agent_a.play and agent_b.play:
                 # Both agents trust so PD is played
-                opportunity_cost = self.model.get_opportunity_cost(
-                    len(agent_list))
+                opportunity_cost = self.model.get_opportunity_cost(len(agent_list))
                 a_payoff = self.model.get_pdt_payoff(
-                    (a.pdtchoice, b.pdtchoice), opportunity_cost)
+                    (agent_a.pdtchoice, agent_b.pdtchoice), opportunity_cost)
                 b_payoff = self.model.get_pdt_payoff(
-                    (b.pdtchoice, a.pdtchoice), opportunity_cost)
-                a.receive_payoff(a_payoff)
-                b.receive_payoff(b_payoff)
+                    (agent_b.pdtchoice, agent_a.pdtchoice), opportunity_cost)
+                agent_a.receive_payoff(a_payoff)
+                agent_b.receive_payoff(b_payoff)
+
+                # There was an interaction, so GossipAgents should memorize this interaction
+                if isinstance(agent_a, GossipAgent):
+                    agent_a.memorize(agent_b, a_payoff)
+                    agent_b.memorize(agent_a, b_payoff)
+
             else:
                 # One agent does not trust so PD is not played and both agents receive exit payoff
-                a.receive_payoff(self.model.exit_payoff)
-                b.receive_payoff(self.model.exit_payoff)
+                agent_a.receive_payoff(self.model.exit_payoff)
+                agent_b.receive_payoff(self.model.exit_payoff)
+
 
     def get_role_model(self, neighbourhood: int) -> 'BaseAgent':
         """ Returns most successfull agent (considering the cumulative payoff) in the

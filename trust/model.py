@@ -42,17 +42,20 @@ class PDTModel(Model):
         """
         return PDTModel._EXIT_PAYOFF
 
-    # Can pass any class of agent that implements BaseAgent to AgentClass. Passing a str of the class also suffices: e.g. 'RLAgent'.
-    # kwargs are keyword arguments that are passed on to the __init__ of RLAgent. Check implementation for available args.
+    # Can pass any class of agent that implements BaseAgent to AgentClass. Passing a str of
+    # the class also suffices: e.g. 'RLAgent'. kwargs are keyword arguments that are passed
+    # on to the __init__ of RLAgent. Check implementation for available args.
     def __init__(self, AgentClass: Union[str, type] = MSAgent, N: int = 1000,
                  neighbourhood_size: int = 50, mobility_rate: float = 0.2, **kwargs) -> None:
-        """ Initializes the model. Can take parameters defining the agent type (default MSAgent), population size N (default 1000),
-            neighbourhood size (default 50) and mobility rate (default 0.2). kwargs are keyword arguments that are passed on to the __init__ of RLAgent.
-        
-            The number of neighbourhoods n is calculated, after which a network with n neighbourhoods is created.
-            Additionaly, a scheduler (as defined in activation.py) is created.
-            All agents are distributed amongst the neighbourhoods and added to the scheduler.
-            Besides this, a datacollector is set up and initialized.
+        """ Initializes the model. Can take parameters defining the agent type (default MSAgent),
+            population size N (default 1000), neighbourhood size (default 50) and mobility rate
+            (default 0.2). kwargs are keyword arguments that are passed on to the __init__ of
+            RLAgent.
+
+            The number of neighbourhoods n is calculated, after which a network with n
+            neighbourhoods is created. Additionaly, a scheduler (as defined in activation.py)
+            is created. All agents are distributed amongst the neighbourhoods and added to
+            the scheduler. Besides this, a datacollector is set up and initialized.
         """
 
         self.num_agents = N
@@ -69,7 +72,7 @@ class PDTModel(Model):
         for i in range(self.num_agents):
             neighbourhood = int(i % self.num_neighbourhoods)
             # TODO: Cluster agent location into neighborhoods of randomly varying size.
-            a = AgentClass(i, self, neighbourhood, **kwargs)
+            a = AgentClass(i, self, neighbourhood, N, **kwargs)
             self.schedule.add(a)
             self.network.add_agent_to_neighbourhood(a, neighbourhood)
 
@@ -86,10 +89,11 @@ class PDTModel(Model):
         )
 
     def step(self):
-        """ Lets the scheduler execute a step for all agents. Afterward, the nework pairs all agents to another agent
-            (with the exception of odd amount of agents in a neighbourhood or globally) and lets them play the prisoners' game.
-            If needed, the data are stored in the datacollector. Finally, it lets the scheduler execute the finalize method
-            for all agents (and move to the next step).
+        """ Lets the scheduler execute a step for all agents. Afterward, the nework pairs
+            all agents to another agent (with the exception of odd amount of agents in a
+            neighbourhood or globally) and lets them play the prisoners' game. If needed,
+            the data are stored in the datacollector. Finally, it lets the scheduler execute
+            the finalize method for all agents (and move to the next step).
         """
         self.schedule.step()
         self.network.pair_and_play()
@@ -117,40 +121,42 @@ class PDTModel(Model):
         return len([a for a in self.schedule.agents if a.in_market]) / self.num_agents
 
     def trust_rate(self) -> float:
-        """ Returns the percentage out of all agents which decided to play (so, trust) the prisoners'
-            dilemma with the agent they have been matched with.
+        """ Returns the percentage out of all agents which decided to play
+            (so, trust) the prisoners' dilemma with the agent they have been matched with.
         """
         return len([a for a in self.schedule.agents if a.play]) / self.num_agents
 
     def cooperating_agents(self) -> float:
-        """ Returns the percentage out of all agents that played the prisoners' dilemma with the agent they have
-            been matched with and decided to cooperate.
+        """ Returns the percentage out of all agents that played the prisoners' dilemma with the
+            agent they have been matched with and decided to cooperate.
         """
-        return len([a for a in self.schedule.agents if a.pdtchoice == PDTChoice.COOPERATE]) / self.num_agents
+        return len([a for a in self.schedule.agents if a.pdtchoice == PDTChoice.COOPERATE]) \
+            / self.num_agents
 
     def trust_in_strangers(self) -> float:
-        """ Returns the percentage out of all agents matched with a stranger that have decided to play (so, trust)
-            the prisoners' dilemma with the agent they have been matched with.
+        """ Returns the percentage out of all agents matched with a stranger that have decided
+            to play (so, trust) the prisoners' dilemma with the agent they have been matched with.
         """
         a_with_stranger_partners = [
             a for a in self.schedule.agents if a.stranger_partner]
         return len([a for a in a_with_stranger_partners if a.play]) / len(a_with_stranger_partners)
 
     def trust_in_neighbors(self) -> float:
-        """ Returns the percentage out of all agents matched with a neighbour that have decided to play (so, trust)
-            the prisoners' dilemma with the agent they have been matched with.
+        """ Returns the percentage out of all agents matched with a neighbour that have decided
+            to play (so, trust) the prisoners' dilemma with the agent they have been matched with.
         """
         a_with_neighbor_partners = [
             a for a in self.schedule.agents if not a.in_market]
         return len([a for a in a_with_neighbor_partners if a.play]) / len(a_with_neighbor_partners)
 
     def trust_in_newcomers(self) -> float:
-        """ Returns the percentage out of all agents matched with a newcommer of the neighbourhood that have decided
-            to play (so, trust) the prisoners' dilemma with the agent they have been matched with.
+        """ Returns the percentage out of all agents matched with a newcommer of the neighbourhood
+            that have decided  to play (so, trust) the prisoners' dilemma with the agent they
+            have been matched with.
         """
         a_with_newcommers = [
             a for a in self.schedule.agents if a.partern_is_newcommer]
-        if len(a_with_newcommers) == 0:
+        if a_with_newcommers.__sizeof__() > 0:
             return 0
         return len([a for a in a_with_newcommers if a.play]) / len(a_with_newcommers)
 

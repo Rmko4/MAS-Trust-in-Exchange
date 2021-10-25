@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 class BaseAgent(Agent):
     """ Defines a base agent, which is an implementation of an Agent as defined by the MESA module.
     """
-    def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int) -> None:
+    def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int, N: int) -> None:
         """ Initializes the baseAgent. Saves the neighbourhood that the agent is in, and does not
             mark it as a newcomer. Initializs the propensity to read signals (antagonist
             parochialism), propensity to cooperate and propensity to enter the open market (over
@@ -21,8 +21,11 @@ class BaseAgent(Agent):
             prisoners' dilemma (or the exit cost if the agents decides not to play).
         """
         super().__init__(unique_id, model)
+        self.unique_id = unique_id
         self.neighbourhood = neighbourhood
-        self.newcomer = False
+        self.newcomer = True
+        self.partern_is_newcommer = True
+        self.stranger_partner = True
 
         # Equivalent to the propensity to read signals
         self.trust_prob = self.random.random()
@@ -36,6 +39,8 @@ class BaseAgent(Agent):
         self.in_market = False
         self.read_signal = False
         self.paired = False
+
+        self.memories = [None] * N
 
         self.payoff = 0
         self.cumulative_payoff = 0
@@ -171,6 +176,10 @@ class BaseAgent(Agent):
             self.trustworthiness_prob = self.stochastic_learning(
                 self.trustworthiness_prob, self.payoff)
 
+    # def memorize(self, exchange_partner, payoff) -> None:
+    #     """ Empty function, only implemented for the GossipAgent.
+    #     """
+
 
 class MSAgent(BaseAgent):
     """ Implementation of the Macy and Sato agent, extend a BaseAgent.
@@ -184,6 +193,17 @@ class MSAgent(BaseAgent):
             on its propensity to trust another agent.
         """
         self.paired = True
+
+        # TODO: We never use the value of self.partner_is_newcomer right...?
+        if not self.in_market and (exchange_partner.newcomer or self.newcomer):
+            self.partern_is_newcommer = True
+        else:
+            self.partern_is_newcommer = False
+
+        if exchange_partner.newcomer or self.newcomer:
+            self.stranger_partner = True
+        else:
+            self.stranger_partner = False
 
         if self.random.random() < self.trust_prob:
             self.play = True
@@ -298,3 +318,44 @@ class RLAgent(WHAgent):
             return prob + self.learning_rate * (1 - prob) * payoff
         else:
             return prob + self.learning_rate * prob * payoff
+
+class GossipAgent(WHAgent):
+    """ TODO
+    """
+    def decide_play(self, exchange_partner) -> None:
+        """ TODO
+        """
+        self.paired = True
+
+        role_model = self.model.network.get_role_model(self.neighbourhood)
+
+        if not self.in_market and (exchange_partner.newcomer or self.newcomer):
+            self.partern_is_newcommer = True
+        else:
+            self.partern_is_newcommer = False
+
+        if exchange_partner.newcomer or self.newcomer:
+            self.stranger_partner = True
+        else:
+            self.stranger_partner = False
+
+        # See if you trust the role model
+        if self.memories[role_model.unique_id] is 1:
+            advice = role_model.memories[exchange_partner.unique_id]
+            # Take over the advice from the role model, if there is any advice
+            if advice is not None:
+                self.play = 1 if advice == 1 else 0
+        else:
+            # If you don't trust him, act as a MSAgent
+            if self.random.random() < self.trust_prob:
+                self.play = True
+            else:
+                self.play = False
+
+    def memorize(self, exchange_partner, payoff) -> None:
+        """ TODO
+        """
+        if payoff > 0:
+            self.memories[exchange_partner.unique_id] = 1
+        else:
+            self.memories[exchange_partner.unique_id] = 0

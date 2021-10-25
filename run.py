@@ -14,13 +14,16 @@ print("Number of agents: " + str(N))
 print("Neighbourhood size: " + str(n))
 print("Mobility rate: " + str(mob_rate))
 
-agent_class = input("\nChoose agentclass (Default is RLAgent):\n 1: MSAgent, 2: WHAgent, 3: RLAgent.\n\n")
+agent_class = input("\nChoose agentclass (Default is RLAgent):\n 1: MSAgent, 2: WHAgent, 3: GossipAgent, 4: RLAgent.\n\n")
 if agent_class == "1":
     agent_class = "MSAgent"
     model = PDTModel(AgentClass="MSAgent", N=N, neighbourhood_size=n, mobility_rate=mob_rate)
 elif agent_class == "2":
     agent_class = "WHAgent"
     model = PDTModel(AgentClass="WHAgent", N=N, neighbourhood_size=n, mobility_rate=mob_rate)
+elif agent_class == "3":
+    agent_class = "GossipAgent"
+    model = PDTModel(AgentClass="GossipAgent", N=N, neighbourhood_size=n, mobility_rate=mob_rate)
 else:
     agent_class = "RLAgent"
     model = PDTModel(AgentClass="RLAgent", N=N, neighbourhood_size=n, mobility_rate=mob_rate, learning_rate=0.02, relative_reward=False)
@@ -32,3 +35,4 @@ df = model.datacollector.get_model_vars_dataframe()
 
 print(df.describe())
 df.to_csv(DATA_PATH + 'data.csv')
+
