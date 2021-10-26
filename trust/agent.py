@@ -176,10 +176,6 @@ class BaseAgent(Agent):
             self.trustworthiness_prob = self.stochastic_learning(
                 self.trustworthiness_prob, self.payoff)
 
-    # def memorize(self, exchange_partner, payoff) -> None:
-    #     """ Empty function, only implemented for the GossipAgent.
-    #     """
-
 
 class MSAgent(BaseAgent):
     """ Implementation of the Macy and Sato agent, extend a BaseAgent.
@@ -339,15 +335,17 @@ class GossipAgent(WHAgent):
         else:
             self.stranger_partner = False
 
-        # See if you trust the role model
-        if self.memories[role_model.unique_id] is 1:
+        # See if you trust the rolemodel
+        if self.memories[role_model.unique_id] == 1:
             advice = role_model.memories[exchange_partner.unique_id]
             # Take over the advice from the role model, if there is any advice
             if advice is not None:
                 self.play = 1 if advice == 1 else 0
         else:
-            # If you don't trust him, act as a MSAgent
-            if self.random.random() < self.trust_prob:
+            # If you don't trust him, use signal reading
+            self.read_signal = True
+            signal = exchange_partner.get_signal()
+            if signal == PDTChoice.COOPERATE:
                 self.play = True
             else:
                 self.play = False

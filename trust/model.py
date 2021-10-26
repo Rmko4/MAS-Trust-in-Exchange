@@ -66,15 +66,15 @@ class PDTModel(Model):
 
         self.mobility_rate = mobility_rate
 
-        if type(AgentClass) == str:
+        if isinstance(AgentClass, str):
             AgentClass = getattr(agent, AgentClass)
 
         for i in range(self.num_agents):
             neighbourhood = int(i % self.num_neighbourhoods)
             # TODO: Cluster agent location into neighborhoods of randomly varying size.
-            a = AgentClass(i, self, neighbourhood, N, **kwargs)
-            self.schedule.add(a)
-            self.network.add_agent_to_neighbourhood(a, neighbourhood)
+            agent_a = AgentClass(i, self, neighbourhood, N, **kwargs)
+            self.schedule.add(agent_a)
+            self.network.add_agent_to_neighbourhood(agent_a, neighbourhood)
 
         self.datacollector = DataCollector(
             {
@@ -156,7 +156,7 @@ class PDTModel(Model):
         """
         a_with_newcommers = [
             a for a in self.schedule.agents if a.partern_is_newcommer]
-        if a_with_newcommers.__sizeof__() > 0:
+        if len(a_with_newcommers) == 0:
             return 0
         return len([a for a in a_with_newcommers if a.play]) / len(a_with_newcommers)
 

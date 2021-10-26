@@ -35,4 +35,3 @@ df = model.datacollector.get_model_vars_dataframe()
 
 print(df.describe())
 df.to_csv(DATA_PATH + 'data.csv')
-
