@@ -7,8 +7,8 @@ from mesa import Model
 from mesa.datacollection import DataCollector
 
 from trust.activation import TwoStepActivation
-from trust.agent import MSAgent
-import trust.agent as agent
+from trust.agent import GossipAgent, MSAgent, RLAgent
+import trust.agent as agent_module
 from trust.choice import PDTChoice
 from trust.network import Network
 
@@ -67,14 +67,17 @@ class PDTModel(Model):
         self.mobility_rate = mobility_rate
 
         if isinstance(AgentClass, str):
-            AgentClass = getattr(agent, AgentClass)
+            AgentClass = getattr(agent_module, AgentClass)
+            
+        if AgentClass == GossipAgent:
+            kwargs["num_agents"] = self.num_agents
 
         for i in range(self.num_agents):
             neighbourhood = int(i % self.num_neighbourhoods)
             # TODO: Cluster agent location into neighborhoods of randomly varying size.
-            agent_a = AgentClass(i, self, neighbourhood, number_of_agents, **kwargs)
-            self.schedule.add(agent_a)
-            self.network.add_agent_to_neighbourhood(agent_a, neighbourhood)
+            agent = AgentClass(i, self, neighbourhood, **kwargs)
+            self.schedule.add(agent)
+            self.network.add_agent_to_neighbourhood(agent, neighbourhood)
 
         self.datacollector = DataCollector(
             {

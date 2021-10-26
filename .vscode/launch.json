@@ -9,7 +9,8 @@
             "type": "python",
             "request": "launch",
             "program": "run.py",
-            "args": ["-a=MSAgent", "-n=10", "-N=1000", "-t1=100"],
+            "cwd": "${workspaceRoot}",
+            "args": ["-a=MSAgent", "-n=10", "-N=1000", "-t1=100", "-t2=100"],
             "console": "integratedTerminal",
             "justMyCode": false
         }

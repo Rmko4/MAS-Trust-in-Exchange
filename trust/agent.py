@@ -11,7 +11,8 @@ if TYPE_CHECKING:
 class BaseAgent(Agent):
     """ Defines a base agent, which is an implementation of an Agent as defined by the MESA module.
     """
-    def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int, N: int) -> None:
+
+    def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int) -> None:
         """ Initializes the baseAgent. Saves the neighbourhood that the agent is in, and does not
             mark it as a newcomer. Initializs the propensity to read signals (antagonist
             parochialism), propensity to cooperate and propensity to enter the open market (over
@@ -21,11 +22,8 @@ class BaseAgent(Agent):
             prisoners' dilemma (or the exit cost if the agents decides not to play).
         """
         super().__init__(unique_id, model)
-        self.unique_id = unique_id
         self.neighbourhood = neighbourhood
-        self.newcomer = True
-        self.partern_is_newcommer = True
-        self.stranger_partner = True
+        self.newcomer = False
 
         # Equivalent to the propensity to read signals
         self.trust_prob = self.random.random()
@@ -39,8 +37,6 @@ class BaseAgent(Agent):
         self.in_market = False
         self.read_signal = False
         self.paired = False
-
-        self.memories = [None] * N
 
         self.payoff = 0
         self.cumulative_payoff = 0
@@ -90,8 +86,20 @@ class BaseAgent(Agent):
 
             Returns a NotImplementedError in case the type of agent is not specified (this
             should not happen).
+            TODO: update doc, as this should now be called from sub
         """
-        raise NotImplementedError
+        self.paired = True
+
+        # TODO: We never use the value of self.partner_is_newcomer right...?
+        if not self.in_market and (exchange_partner.newcomer or self.newcomer):
+            self.partern_is_newcommer = True
+        else:
+            self.partern_is_newcommer = False
+
+        if exchange_partner.newcomer or self.newcomer:
+            self.stranger_partner = True
+        else:
+            self.stranger_partner = False
 
     def move(self) -> None:
         """ Moves an agent to a different neighbourhood than it is in now, also marks
@@ -156,7 +164,8 @@ class BaseAgent(Agent):
             self.location_prob = 1 - \
                 self.stochastic_learning(1 - self.location_prob, self.payoff)
         else:
-            self.location_prob = self.stochastic_learning(self.location_prob, self.payoff)
+            self.location_prob = self.stochastic_learning(
+                self.location_prob, self.payoff)
 
         if social_learning and self.random.random() > 0.5:
             self.trust_prob = role_model.trust_prob
@@ -171,7 +180,8 @@ class BaseAgent(Agent):
             self.trustworthiness_prob = role_model.trustworthiness_prob
         elif self.pdtchoice == PDTChoice.COOPERATE:
             self.trustworthiness_prob = 1 - \
-                self.stochastic_learning(1 - self.trustworthiness_prob, self.payoff)
+                self.stochastic_learning(
+                    1 - self.trustworthiness_prob, self.payoff)
         else:
             self.trustworthiness_prob = self.stochastic_learning(
                 self.trustworthiness_prob, self.payoff)
@@ -184,22 +194,12 @@ class MSAgent(BaseAgent):
         the prisoners' dilemma with the agent he is matched with is based on the propensity
         to read signals.
     """
-    def decide_play(self, exchange_partner) -> None:
+
+    def decide_play(self, exchange_partner: 'MSAgent') -> None:
         """ Updates the agents decision to play or exit a prisoners' dilemma based
             on its propensity to trust another agent.
         """
-        self.paired = True
-
-        # TODO: We never use the value of self.partner_is_newcomer right...?
-        if not self.in_market and (exchange_partner.newcomer or self.newcomer):
-            self.partern_is_newcommer = True
-        else:
-            self.partern_is_newcommer = False
-
-        if exchange_partner.newcomer or self.newcomer:
-            self.stranger_partner = True
-        else:
-            self.stranger_partner = False
+        super().decide_play(exchange_partner)
 
         if self.random.random() < self.trust_prob:
             self.play = True
@@ -214,6 +214,7 @@ class WHAgent(BaseAgent):
         the prisoners' dilemma with the agent he is matched with is different for known agents
         and stangers.
     """
+
     def decide_play(self, exchange_partner: 'WHAgent') -> None:
         """ Updates the agents decision to play or exit a prisoners' dilemma.
 
@@ -228,18 +229,7 @@ class WHAgent(BaseAgent):
             is not a newcomer to the neighbourhood, and the agent itself is not a newcomer
             to the neighbourhood).
         """
-        self.paired = True
-
-        # TODO: We never use the value of self.partner_is_newcomer right...?
-        if not self.in_market and (exchange_partner.newcomer or self.newcomer):
-            self.partern_is_newcommer = True
-        else:
-            self.partern_is_newcommer = False
-
-        if exchange_partner.newcomer or self.newcomer:
-            self.stranger_partner = True
-        else:
-            self.stranger_partner = False
+        super().decide_play(exchange_partner)
 
         if self.random.random() < self.trust_prob:
             # Signal reading
@@ -281,6 +271,7 @@ class RLAgent(WHAgent):
         Similar to the WHAgent, though the learning rate is no longer stochastic
         but based on reinforcement learning.
     """
+
     def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int,
                  learning_rate: float, relative_reward: bool = False) -> None:
         super().__init__(unique_id, model, neighbourhood)
@@ -315,25 +306,23 @@ class RLAgent(WHAgent):
         else:
             return prob + self.learning_rate * prob * payoff
 
+
 class GossipAgent(WHAgent):
-    """ TODO
+    """ TODO 
     """
+
+    def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int,
+                 num_agents: int) -> None:
+        super().__init__(unique_id, model, neighbourhood)
+
+        self.memories = [None] * num_agents
+
     def decide_play(self, exchange_partner) -> None:
         """ TODO
         """
-        self.paired = True
+        super().decide_play(exchange_partner)
 
         role_model = self.model.network.get_role_model(self.neighbourhood)
-
-        if not self.in_market and (exchange_partner.newcomer or self.newcomer):
-            self.partern_is_newcommer = True
-        else:
-            self.partern_is_newcommer = False
-
-        if exchange_partner.newcomer or self.newcomer:
-            self.stranger_partner = True
-        else:
-            self.stranger_partner = False
 
         # See if you trust the rolemodel
         if self.memories[role_model.unique_id] == 1:
