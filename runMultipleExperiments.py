@@ -25,7 +25,7 @@ with open(str(sys.argv[1]), 'w') as f:
         for mob_rate in np.arange(mob_rate_min,mob_rate_max + 0.0001,mob_rate_stepsize):
             print("Neighborhood size: " + str(n) + ", Mobility rate: " + str(mob_rate))
 
-            model = PDTModel(N=N, neighbourhood_size=n, mobility_rate=mob_rate)
+            model = PDTModel(number_of_agents=N, neighbourhood_size=n, mobility_rate=mob_rate)
             model.run_model(100, 1000)
             df = model.datacollector.get_model_vars_dataframe()
 

@@ -45,7 +45,7 @@ class PDTModel(Model):
     # Can pass any class of agent that implements BaseAgent to AgentClass. Passing a str of
     # the class also suffices: e.g. 'RLAgent'. kwargs are keyword arguments that are passed
     # on to the __init__ of RLAgent. Check implementation for available args.
-    def __init__(self, AgentClass: Union[str, type] = MSAgent, N: int = 1000,
+    def __init__(self, AgentClass: Union[str, type] = MSAgent, number_of_agents: int = 1000,
                  neighbourhood_size: int = 50, mobility_rate: float = 0.2, **kwargs) -> None:
         """ Initializes the model. Can take parameters defining the agent type (default MSAgent),
             population size N (default 1000), neighbourhood size (default 50) and mobility rate
@@ -58,7 +58,7 @@ class PDTModel(Model):
             the scheduler. Besides this, a datacollector is set up and initialized.
         """
 
-        self.num_agents = N
+        self.num_agents = number_of_agents
         self.num_neighbourhoods = int(self.num_agents / neighbourhood_size)
 
         self.network = Network(self, self.num_neighbourhoods)
@@ -72,7 +72,7 @@ class PDTModel(Model):
         for i in range(self.num_agents):
             neighbourhood = int(i % self.num_neighbourhoods)
             # TODO: Cluster agent location into neighborhoods of randomly varying size.
-            agent_a = AgentClass(i, self, neighbourhood, N, **kwargs)
+            agent_a = AgentClass(i, self, neighbourhood, number_of_agents, **kwargs)
             self.schedule.add(agent_a)
             self.network.add_agent_to_neighbourhood(agent_a, neighbourhood)
 
