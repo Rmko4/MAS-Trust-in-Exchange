@@ -1,9 +1,11 @@
 """ This file contains the classes defining different types of agents.
 """
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
+
 from mesa import Agent
 
 from trust.choice import PDTChoice
+
 if TYPE_CHECKING:
     from trust.model import PDTModel
 
@@ -22,6 +24,8 @@ class BaseAgent(Agent):
             prisoners' dilemma (or the exit cost if the agents decides not to play).
         """
         super().__init__(unique_id, model)
+        self.model: 'PDTModel'
+
         self.neighbourhood = neighbourhood
         self.newcomer = False
 
@@ -89,14 +93,14 @@ class BaseAgent(Agent):
             TODO: update doc, as this should now be called from sub
         """
         self.paired = True
+        self.exchange_partner = exchange_partner
 
-        # TODO: We never use the value of self.partner_is_newcomer right...?
         if not self.in_market and (exchange_partner.newcomer or self.newcomer):
             self.partern_is_newcommer = True
         else:
             self.partern_is_newcommer = False
 
-        if exchange_partner.newcomer or self.newcomer:
+        if exchange_partner.newcomer or self.newcomer or self.in_market:
             self.stranger_partner = True
         else:
             self.stranger_partner = False
@@ -232,21 +236,33 @@ class WHAgent(BaseAgent):
         super().decide_play(exchange_partner)
 
         if self.random.random() < self.trust_prob:
-            # Signal reading
-            self.read_signal = True
-            signal = exchange_partner.get_signal()
-            if signal == PDTChoice.COOPERATE:
-                self.play = True
-            else:
-                self.play = False
+            self.signal_reading()
         else:
-            # Parochialism
-            self.read_signal = False
-            if self.stranger_partner:
-                # Also assume self as newcomer to distrust strangers
-                self.play = False
-            else:
-                self.play = True
+            self.parochialism()
+
+    def signal_reading(self):
+        """
+        docstring
+        """
+        self.read_signal = True
+        exchange_partner: 'WHAgent' = self.exchange_partner
+
+        signal = exchange_partner.get_signal()
+        if signal == PDTChoice.COOPERATE:
+            self.play = True
+        else:
+            self.play = False
+
+    def parochialism(self):
+        """
+        docstring
+        """
+        self.read_signal = False
+        if self.stranger_partner:
+            # Also assume self as newcomer to distrust strangers
+            self.play = False
+        else:
+            self.play = True
 
     def get_signal(self) -> PDTChoice:
         """ Returns the choice the agent makes on whether to cooperate or defect in the
@@ -313,7 +329,7 @@ class GossipAgent(WHAgent):
         This agent asks the role model whether or not the agent he has
         been matched with can be considered trustworthy, i.e. it takes the
         advice from the role model to decide whether or not to cooperate in the
-        prisonters' dilemma.
+        prisoners' dilemma.
     """
 
     def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int,
@@ -323,9 +339,14 @@ class GossipAgent(WHAgent):
         """
         super().__init__(unique_id, model, neighbourhood)
 
-        self.memories = [None] * num_agents
+        self.memories: Union[None, bool] = [None] * num_agents
 
-    def decide_play(self, exchange_partner) -> None:
+    def finalize(self) -> None:
+        if self.paired and self.play and self.exchange_partner.play:
+            self.memorize_trust()
+        return super().finalize()
+
+    def decide_play(self, exchange_partner: 'GossipAgent') -> None:
         """ Updates the agents decision to play or exit a prisoners' dilemma.
 
             First, the role model is updated. If the agent has had a positive
@@ -341,33 +362,22 @@ class GossipAgent(WHAgent):
             to read the signals of the other agent, similar to the behavior of
             the WHAgent.
         """
-        super().decide_play(exchange_partner)
+        super(WHAgent, self).decide_play(exchange_partner)
 
-        role_model = self.model.network.get_role_model(self.neighbourhood)
+        role_model: 'GossipAgent' = self.model.network.get_role_model(
+            self.neighbourhood)
 
-        # See if you trust the rolemodel
-        # if self.memories[role_model.unique_id] == 1:
-        #     advice = role_model.memories[exchange_partner.unique_id]
-        #     # Take over the advice from the role model, if there is any advice
-        #     if advice is not None:
-        #         self.play = 1 if advice == 1 else 0
-
-        advice = role_model.memories[exchange_partner.unique_id]
+        advice = role_model.memories[self.exchange_partner.unique_id]
         if advice is not None:
-            self.play = 1 if advice == 1 else 0
+            self.play = True if advice == True else False
         else:
             # If you don't trust him, use signal reading
-            self.read_signal = True
-            signal = exchange_partner.get_signal()
-            if signal == PDTChoice.COOPERATE:
-                self.play = True
-            else:
-                self.play = False
+            self.signal_reading()
 
-    def memorize(self, exchange_partner, payoff) -> None:
+    def memorize_trust(self) -> None:
         """ TODO
         """
-        if payoff > 0:
-            self.memories[exchange_partner.unique_id] = 1
+        if self.payoff > 0:
+            self.memories[self.exchange_partner.unique_id] = True
         else:
-            self.memories[exchange_partner.unique_id] = 0
+            self.memories[self.exchange_partner.unique_id] = False

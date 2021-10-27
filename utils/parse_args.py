@@ -1,12 +1,16 @@
 import argparse
+from typing import List
+
 from utils.comp_range import Range
 
 run_keys = ['T_onset', 'T_record']
 save_keys = ['save_filename']
 
-def pop_keys(dict, keys):
+
+def pop_keys(dict: dict, keys: List[str]):
     items = {k: dict.pop(k) for k in list(dict.keys()) if k in keys}
     return items
+
 
 def parse_args(print_args=False):
     parser = argparse.ArgumentParser(description='MAS for trust in exchange')
@@ -32,13 +36,14 @@ def parse_args(print_args=False):
     args = parser.parse_args()
 
     if args.neighbourhood_size > args.number_of_agents:
-        raise ValueError('neighbourhood-size is larger than number-of-agents')
+        raise ValueError(
+            f'neighbourhood-size={args.neighbourhood_size} is larger than number-of-agents={args.number_of_agents}')
     if args.AgentClass != 'RLAgent':
         del args.learning_rate
         del args.relative_reward
 
     kwargs = vars(args)
-    
+
     run_args = pop_keys(kwargs, run_keys)
     save_filename = pop_keys(kwargs, save_keys)[save_keys[0]]
 
