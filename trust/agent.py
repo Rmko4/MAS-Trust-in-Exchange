@@ -327,13 +327,13 @@ class GossipAgent(WHAgent):
 
     def decide_play(self, exchange_partner) -> None:
         """ Updates the agents decision to play or exit a prisoners' dilemma.
-            
+
             First, the role model is updated. If the agent has had a positive
             previous experiment with this role model, the agent will ask the
-            role model for advice. 
+            role model for advice.
 
             The role model can only give advice if he has had a previous encounter
-            with the agent that he's asked advice about. 
+            with the agent that he's asked advice about.
 
             If the agent receives advice from the role model, it will trust this
             advice and decide to cooperate or defect accordingly. In case the
