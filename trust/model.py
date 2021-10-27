@@ -2,15 +2,17 @@
 """
 
 from typing import Union
+
 import numpy as np
 from mesa import Model
 from mesa.datacollection import DataCollector
 
-from trust.activation import TwoStepActivation
-from trust.agent import GossipAgent, MSAgent, RLAgent
 import trust.agent as agent_module
+from trust.activation import TwoStepActivation
+from trust.agent import *
 from trust.choice import PDTChoice
 from trust.network import Network
+
 
 class PDTModel(Model):
     """ Defines the PDTModel. The associated payoffs are given as attributes of the model.
@@ -68,9 +70,6 @@ class PDTModel(Model):
 
         if isinstance(AgentClass, str):
             AgentClass = getattr(agent_module, AgentClass)
-            
-        if AgentClass == GossipAgent:
-            kwargs["num_agents"] = self.num_agents
 
         for i in range(self.num_agents):
             neighbourhood = int(i % self.num_neighbourhoods)

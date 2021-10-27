@@ -2,7 +2,6 @@
     regarding the agents and their location.
 """
 from typing import TYPE_CHECKING
-from trust.agent import GossipAgent
 
 if TYPE_CHECKING:
     from trust.agent import BaseAgent
@@ -12,6 +11,7 @@ if TYPE_CHECKING:
 class Network:
     """ Defines the Network.
     """
+
     def __init__(self, model: 'PDTModel', num_neighbourhoods) -> None:
         """ Initializes the Network. Takes the model and the amount of neighbourhoods as parameters.
             The market, as well as the list of neighbourhoods, is initialized as empty sets
@@ -81,32 +81,23 @@ class Network:
 
             if agent_a.play and agent_b.play:
                 # Both agents trust so PD is played
-                opportunity_cost = self.model.get_opportunity_cost(len(agent_list))
+                opportunity_cost = self.model.get_opportunity_cost(
+                    len(agent_list))
                 a_payoff = self.model.get_pdt_payoff(
                     (agent_a.pdtchoice, agent_b.pdtchoice), opportunity_cost)
                 b_payoff = self.model.get_pdt_payoff(
                     (agent_b.pdtchoice, agent_a.pdtchoice), opportunity_cost)
                 agent_a.receive_payoff(a_payoff)
                 agent_b.receive_payoff(b_payoff)
-
-                # There was an interaction, so GossipAgents should memorize this interaction
-                if isinstance(agent_a, GossipAgent):
-                    agent_a.memorize(agent_b, a_payoff)
-                    agent_b.memorize(agent_a, b_payoff)
-
             else:
                 # One agent does not trust so PD is not played and both agents receive exit payoff
                 agent_a.receive_payoff(self.model.exit_payoff)
                 agent_b.receive_payoff(self.model.exit_payoff)
 
-
     def get_role_model(self, neighbourhood: int) -> 'BaseAgent':
         """ Returns most successfull agent (considering the cumulative payoff) in the
             neighbourhood as passed in the parameters.
         """
-        return max(self.neighbourhoods[neighbourhood], key=lambda a: a.cumulative_payoff)
-        # potential_models = [a for a in self.neighbourhoods[neighbourhood] if not a.newcomer]
-        # if len(potential_models) == 0:
-        #     return None
-        # else:
-        #     return max(potential_models, key=lambda a: a.cumulative_payoff)
+        def cumulative_payoff(agent: 'BaseAgent') -> int:
+            return agent.cumulative_payoff
+        return max(self.neighbourhoods[neighbourhood], key=cumulative_payoff)
