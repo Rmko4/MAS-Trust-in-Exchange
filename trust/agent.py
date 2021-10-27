@@ -37,6 +37,8 @@ class BaseAgent(Agent):
         self.in_market = False
         self.read_signal = False
         self.paired = False
+        self.stranger_partner = True
+        self.partern_is_newcommer = True
 
         self.payoff = 0
         self.cumulative_payoff = 0

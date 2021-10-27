@@ -142,6 +142,8 @@ class PDTModel(Model):
         """
         a_with_stranger_partners = [
             a for a in self.schedule.agents if a.stranger_partner]
+        if  len(a_with_stranger_partners) == 0:
+            return 0
         return len([a for a in a_with_stranger_partners if a.play]) / len(a_with_stranger_partners)
 
     def trust_in_neighbors(self) -> float:

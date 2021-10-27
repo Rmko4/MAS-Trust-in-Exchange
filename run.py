@@ -16,6 +16,9 @@ def run():
     model.run_model(**run_args)
     df = model.datacollector.get_model_vars_dataframe()
 
+    print(model_args)
+    print(run_args)
+
     print(df.describe())
     df.to_csv(DATA_PATH + file_name)
 
