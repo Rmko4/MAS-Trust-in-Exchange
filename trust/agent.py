@@ -308,28 +308,53 @@ class RLAgent(WHAgent):
 
 
 class GossipAgent(WHAgent):
-    """ TODO 
+    """ Implementation of the Gossip agent, extends a WHAgent.
+
+        This agent asks the role model whether or not the agent he has
+        been matched with can be considered trustworthy, i.e. it takes the
+        advice from the role model to decide whether or not to cooperate in the
+        prisonters' dilemma.
     """
 
     def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int,
                  num_agents: int) -> None:
+        """ Complementary to the init of its super, this agent also creates
+            a list of previous experiences with other agents.
+        """
         super().__init__(unique_id, model, neighbourhood)
 
         self.memories = [None] * num_agents
 
     def decide_play(self, exchange_partner) -> None:
-        """ TODO
+        """ Updates the agents decision to play or exit a prisoners' dilemma.
+            
+            First, the role model is updated. If the agent has had a positive
+            previous experiment with this role model, the agent will ask the
+            role model for advice. 
+
+            The role model can only give advice if he has had a previous encounter
+            with the agent that he's asked advice about. 
+
+            If the agent receives advice from the role model, it will trust this
+            advice and decide to cooperate or defect accordingly. In case the
+            role model can't give advice, the agent will fall back to its ability
+            to read the signals of the other agent, similar to the behavior of
+            the WHAgent.
         """
         super().decide_play(exchange_partner)
 
         role_model = self.model.network.get_role_model(self.neighbourhood)
 
         # See if you trust the rolemodel
-        if self.memories[role_model.unique_id] == 1:
-            advice = role_model.memories[exchange_partner.unique_id]
-            # Take over the advice from the role model, if there is any advice
-            if advice is not None:
-                self.play = 1 if advice == 1 else 0
+        # if self.memories[role_model.unique_id] == 1:
+        #     advice = role_model.memories[exchange_partner.unique_id]
+        #     # Take over the advice from the role model, if there is any advice
+        #     if advice is not None:
+        #         self.play = 1 if advice == 1 else 0
+
+        advice = role_model.memories[exchange_partner.unique_id]
+        if advice is not None:
+            self.play = 1 if advice == 1 else 0
         else:
             # If you don't trust him, use signal reading
             self.read_signal = True
