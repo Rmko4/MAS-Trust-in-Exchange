@@ -1,8 +1,9 @@
 """ This file contains the classes defining different types of agents.
 """
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from mesa import Agent
+from utils.dictionary import LimitedDict
 
 from trust.choice import PDTChoice
 
@@ -333,13 +334,13 @@ class GossipAgent(WHAgent):
     """
 
     def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int,
-                 num_agents: int) -> None:
+                 memory_size: int) -> None:
         """ Complementary to the init of its super, this agent also creates
             a list of previous experiences with other agents.
         """
         super().__init__(unique_id, model, neighbourhood)
 
-        self.memories: Union[None, bool] = [None] * num_agents
+        self.memories: LimitedDict[int, bool] = LimitedDict(memory_size)
 
     def finalize(self) -> None:
         if self.paired and self.play and self.exchange_partner.play:
@@ -367,8 +368,9 @@ class GossipAgent(WHAgent):
         role_model: 'GossipAgent' = self.model.network.get_role_model(
             self.neighbourhood)
 
-        advice = role_model.memories[self.exchange_partner.unique_id]
-        if advice is not None:
+        partner_id = self.exchange_partner.unique_id
+        if partner_id in role_model.memories:
+            advice = role_model.memories[partner_id]
             self.play = True if advice == True else False
         else:
             # If you don't trust him, use signal reading

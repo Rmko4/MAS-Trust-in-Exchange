@@ -22,10 +22,14 @@ def parse_args(print_args=False):
                         type=int, choices=[Range(0, 10000)])
     parser.add_argument('-n', '--neighbourhood-size',
                         default=30, type=int, choices=[Range(0, 10000)])
+
     parser.add_argument('-l', '--learning-rate', default=0.02,
                         type=float, choices=[Range(0.0, 1.0)], help='Only for RLAgent')
     parser.add_argument('-r', '--relative-reward', default=False,
                         type=bool, choices=[True, False], help='Only for RLAgent')
+    parser.add_argument('-ms', '--memory-size', default=25,
+                        type=bool, choices=[Range(0, 10000)], help='Only for GossipAgent')
+
     parser.add_argument('-t1', '--T_onset', default='100',
                         type=int, choices=[Range(0, int(1e6))])
     parser.add_argument('-t2', '--T_record', default='1000',
@@ -41,6 +45,8 @@ def parse_args(print_args=False):
     if args.AgentClass != 'RLAgent':
         del args.learning_rate
         del args.relative_reward
+    if args.AgentClass != 'GossipAgent':
+        del args.memory_size
 
     kwargs = vars(args)
 

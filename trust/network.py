@@ -3,8 +3,6 @@
 """
 from typing import TYPE_CHECKING
 
-from trust.agent import GossipAgent
-
 if TYPE_CHECKING:
     from trust.agent import BaseAgent
     from trust.model import PDTModel

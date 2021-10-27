@@ -71,9 +71,6 @@ class PDTModel(Model):
         if isinstance(AgentClass, str):
             AgentClass = getattr(agent_module, AgentClass)
 
-        if AgentClass == GossipAgent:
-            kwargs["num_agents"] = self.num_agents
-
         for i in range(self.num_agents):
             neighbourhood = int(i % self.num_neighbourhoods)
             # TODO: Cluster agent location into neighborhoods of randomly varying size.
