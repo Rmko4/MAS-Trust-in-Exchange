@@ -35,7 +35,7 @@ def parse_args(print_args=False):
     parser.add_argument('-t2', '--T_record', default='1000',
                         type=int, choices=[Range(0, int(1e6))])
     parser.add_argument('--save-filename', default='data.csv',
-                        help='Saves to /data/SAVE-FILENAME')
+                        help='Saves to /m_SAVE-FILENAME and /a_SAVE-FILENAME')
 
     args = parser.parse_args()
 

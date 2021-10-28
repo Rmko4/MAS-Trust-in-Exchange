@@ -5,12 +5,12 @@ from typing import Union
 
 import numpy as np
 from mesa import Model
-from mesa.datacollection import DataCollector
 
 import trust.agent as agent_module
 from trust.activation import TwoStepActivation
 from trust.agent import *
 from trust.choice import PDTChoice
+from trust.datacollector import PDTDataCollector
 from trust.network import Network
 
 
@@ -78,19 +78,20 @@ class PDTModel(Model):
             self.schedule.add(agent)
             self.network.add_agent_to_neighbourhood(agent, neighbourhood)
 
-        self.datacollector = DataCollector(
-            {
-                "Market_Size": lambda m: m.market_size(),
-                "Trust_in_Strangers": lambda m: m.trust_in_strangers(),
-                "Signal_Reading": lambda m: m.signal_reading(),
-                "Trust_Rate": lambda m: m.trust_rate(),
-                "Cooperating_Agents": lambda m: m.cooperating_agents(),
-                "Trust_in_Neighbors": lambda m: m.trust_in_neighbors(),
-                "Trust_in_Newcomers": lambda m: m.trust_in_newcomers()
-            }
-        )
-        self.trustedStrangersAllAgents = [0 for a in self.schedule.agents]
-        self.numberPlayedStrangersAllAgents = [0 for a in self.schedule.agents]
+        self.datacollector = PDTDataCollector(model_reporters={
+            "Market_Size": self._market_size,
+            "Trust_in_Strangers": self._trust_in_strangers,
+            "Signal_Reading": self._signal_reading,
+            "Trust_Rate": self._trust_rate,
+            "Cooperating_Agents": self._cooperating_agents,
+            "Trust_in_Neighbors": self._trust_in_neighbors,
+            "Trust_in_Newcomers": self._trust_in_newcomers
+        }, agent_reporters={
+            "Trust_in_Strangers_agent": "trust_in_stranger",
+            "Paired_with_Stranger_agent": "paired_with_stranger"
+        }, proportion_reporters={
+            "Trust_in_Stranger_proportion": ("Trust_in_Strangers_agent", "Paired_with_Stranger_agent")
+        })
 
     def step(self):
         """ Lets the scheduler execute a step for all agents. Afterward, the nework pairs
@@ -104,7 +105,6 @@ class PDTModel(Model):
 
         if self.record:
             self.datacollector.collect(self)
-            self.collectTrustInStrangersAllAgents()
         self.schedule.finalize()
 
     def run_model(self, T_onset=1000, T_record=1000) -> None:
@@ -120,70 +120,60 @@ class PDTModel(Model):
             self.step()
         self.running = False
 
-    def collectTrustInStrangersAllAgents(self) -> None:
-        """ Writes down for each agent if it played against a stranger and if yes, if it collaborated
-        """
-        l1 = [1 if a.play and a.stranger_partner else 0 for a in self.schedule.agents]
-        l2 = [1 if a.stranger_partner else 0 for a in self.schedule.agents]
-
-        self.trustedStrangersAllAgents = [sum(x) for x in zip(self.trustedStrangersAllAgents,l1)]
-        self.numberPlayedStrangersAllAgents = [sum(x) for x in zip(self.numberPlayedStrangersAllAgents,l2)]
-
-    def trustInStrangersByAgent(self):
-        """Returns the likelihood for each agent to trust a stranger
-        """
-        return [(float)(0) if y == 0 else x/y for (x,y) in zip(self.trustedStrangersAllAgents, self.numberPlayedStrangersAllAgents)]
-
-    def market_size(self) -> float:
+    def _market_size(self) -> float:
         """ Returns the percentage out of all agents which currently is in the global market.
         """
         return len([a for a in self.schedule.agents if a.in_market]) / self.num_agents
 
-    def trust_rate(self) -> float:
+    def _trust_rate(self) -> float:
         """ Returns the percentage out of all agents which decided to play
             (so, trust) the prisoners' dilemma with the agent they have been matched with.
         """
-        return len([a for a in self.schedule.agents if a.play]) / self.num_agents
+        a_paired = [a for a in self.schedule.agents if a.paired]
+        if len(a_paired) == 0:
+            return 0
+        return len([a for a in a_paired if a.play]) / len(a_paired)
 
-    def cooperating_agents(self) -> float:
+    def _cooperating_agents(self) -> float:
         """ Returns the percentage out of all agents that played the prisoners' dilemma with the
             agent they have been matched with and decided to cooperate.
         """
-        return len([a for a in self.schedule.agents if a.pdtchoice == PDTChoice.COOPERATE]) \
-            / self.num_agents
+        a_paired = [a for a in self.schedule.agents if a.paired]
+        if len(a_paired) == 0:
+            return 0
+        return len([a for a in a_paired if a.pdtchoice == PDTChoice.COOPERATE]) \
+            / len(a_paired)
 
-    def trust_in_strangers(self) -> float:
+    def _trust_in_strangers(self) -> float:
         """ Returns the percentage out of all agents matched with a stranger that have decided
             to play (so, trust) the prisoners' dilemma with the agent they have been matched with.
         """
         a_with_stranger_partners = [
-            a for a in self.schedule.agents if a.stranger_partner]
+            a for a in self.schedule.agents if a.partner_is_stranger and a.paired]
         if len(a_with_stranger_partners) == 0:
             return 0
         return len([a for a in a_with_stranger_partners if a.play]) / len(a_with_stranger_partners)
 
-
-    def trust_in_neighbors(self) -> float:
+    def _trust_in_neighbors(self) -> float:
         """ Returns the percentage out of all agents matched with a neighbour that have decided
             to play (so, trust) the prisoners' dilemma with the agent they have been matched with.
         """
         a_with_neighbor_partners = [
-            a for a in self.schedule.agents if not a.in_market]
+            a for a in self.schedule.agents if (not a.in_market) and a.paired]
         return len([a for a in a_with_neighbor_partners if a.play]) / len(a_with_neighbor_partners)
 
-    def trust_in_newcomers(self) -> float:
+    def _trust_in_newcomers(self) -> float:
         """ Returns the percentage out of all agents matched with a newcommer of the neighbourhood
             that have decided  to play (so, trust) the prisoners' dilemma with the agent they
             have been matched with.
         """
         a_with_newcommers = [
-            a for a in self.schedule.agents if a.partern_is_newcommer]
+            a for a in self.schedule.agents if a.partner_is_newcomer and a.paired]
         if len(a_with_newcommers) == 0:
             return 0
         return len([a for a in a_with_newcommers if a.play]) / len(a_with_newcommers)
 
-    def signal_reading(self) -> float:
+    def _signal_reading(self) -> float:
         """ Returns the mean value of the probability to trust another agent amongst all agents.
         """
         return np.mean([a.trust_prob for a in self.schedule.agents])
-

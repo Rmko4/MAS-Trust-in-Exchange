@@ -65,5 +65,5 @@ with open(str(sys.argv[1]) + ".out", 'w') as f:
                 f.write(str(df["Cooperating_Agents"].mean()) + " ")
                 f.write(str(df["Trust_in_Neighbors"].mean()) + " ")
                 f.write(str(df["Trust_in_Newcomers"].mean()) + "\n")
-                g.write(str(model.trustInStrangersByAgent()) + "\n")
+                g.write(str(model.trust_in_strangers_by_agent()) + "\n")
 

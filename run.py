@@ -14,10 +14,14 @@ def run():
     model = PDTModel(**model_args)
 
     model.run_model(**run_args)
-    df = model.datacollector.get_model_vars_dataframe()
+    df_m = model.datacollector.get_model_vars_dataframe()
+    df_a = model.datacollector.get_agent_props_dataframe()
 
-    print(df.describe())
-    df.to_csv(DATA_PATH + file_name)
+    print(df_m.describe())
+    print(df_a.describe())
+
+    df_m.to_csv(DATA_PATH + "m_" + file_name)
+    df_a.to_csv(DATA_PATH + "a_" + file_name)
 
 
 if __name__ == "__main__":

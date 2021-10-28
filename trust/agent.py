@@ -42,8 +42,9 @@ class BaseAgent(Agent):
         self.in_market = False
         self.read_signal = False
         self.paired = False
-        self.stranger_partner = True
-        self.partern_is_newcommer = True
+
+        self.partner_is_stranger = False
+        self.partner_is_newcomer = False
 
         self.payoff = 0
         self.cumulative_payoff = 0
@@ -99,14 +100,14 @@ class BaseAgent(Agent):
         self.exchange_partner = exchange_partner
 
         if not self.in_market and (exchange_partner.newcomer or self.newcomer):
-            self.partern_is_newcommer = True
+            self.partner_is_newcomer = True
         else:
-            self.partern_is_newcommer = False
+            self.partner_is_newcomer = False
 
         if exchange_partner.newcomer or self.newcomer or self.in_market:
-            self.stranger_partner = True
+            self.partner_is_stranger = True
         else:
-            self.stranger_partner = False
+            self.partner_is_stranger = False
 
     def move(self) -> None:
         """ Moves an agent to a different neighbourhood than it is in now, also marks
@@ -193,6 +194,15 @@ class BaseAgent(Agent):
             self.trustworthiness_prob = self.stochastic_learning(
                 self.trustworthiness_prob, self.payoff)
 
+    @property
+    def trust_in_stranger(self) -> bool:
+        return self.play and self.partner_is_stranger and self.paired
+
+    @property
+    def paired_with_stranger(self) -> bool:
+        return self.partner_is_stranger and self.paired
+        
+
 
 class MSAgent(BaseAgent):
     """ Implementation of the Macy and Sato agent, extend a BaseAgent.
@@ -261,7 +271,7 @@ class WHAgent(BaseAgent):
         docstring
         """
         self.read_signal = False
-        if self.stranger_partner:
+        if self.partner_is_stranger:
             # Also assume self as newcomer to distrust strangers
             self.play = False
         else:
