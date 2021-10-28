@@ -8,6 +8,24 @@ if TYPE_CHECKING:
     from trust.model import PDTModel
 
 
+class Neighbourhood(set):
+    def __init__(self) -> None:
+        super().__init__()
+        self.role_model = None
+
+    def set_role_model(self):
+        def _cumulative_payoff(agent: 'BaseAgent') -> int:
+            return agent.cumulative_payoff
+        if len(self) > 0:
+            self.role_model = max(self, key=_cumulative_payoff)
+
+    def get_role_model(self):
+        if self.role_model is None:
+            self.set_role_model()
+        return self.role_model
+
+
+
 class Network:
     """ Defines the Network.
     """
@@ -20,8 +38,9 @@ class Network:
         """
         self.model = model
         self.num_neighbourhoods = num_neighbourhoods
-        self.market = set()
-        self.neighbourhoods = [set() for _ in range(self.num_neighbourhoods)]
+        self.market = Neighbourhood()
+        self.neighbourhoods = [Neighbourhood()
+                               for _ in range(self.num_neighbourhoods)]
 
     def add_agent_to_neighbourhood(self, agent: 'BaseAgent', neighbourhood: int):
         """ Removes an agent (specified in the passed agent parameter) from its current
@@ -52,6 +71,7 @@ class Network:
             market and not both.
         """
         for nbh in self.neighbourhoods:
+            nbh.set_role_model()
             agents = [a for a in nbh if a not in self.market]
             self.play_PDT(agents)
 
@@ -98,6 +118,4 @@ class Network:
         """ Returns most successfull agent (considering the cumulative payoff) in the
             neighbourhood as passed in the parameters.
         """
-        def cumulative_payoff(agent: 'BaseAgent') -> int:
-            return agent.cumulative_payoff
-        return max(self.neighbourhoods[neighbourhood], key=cumulative_payoff)
+        return self.neighbourhoods[neighbourhood].get_role_model()

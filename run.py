@@ -12,13 +12,9 @@ def run():
     model_args, run_args, file_name = parse_args(True)
 
     model = PDTModel(**model_args)
-    print(model_args)
 
     model.run_model(**run_args)
     df = model.datacollector.get_model_vars_dataframe()
-
-    print(model_args)
-    print(run_args)
 
     print(df.describe())
     df.to_csv(DATA_PATH + file_name)

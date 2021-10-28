@@ -86,7 +86,7 @@ class PDTModel(Model):
                 "Trust_Rate": lambda m: m.trust_rate(),
                 "Cooperating_Agents": lambda m: m.cooperating_agents(),
                 "Trust_in_Neighbors": lambda m: m.trust_in_neighbors(),
-                "Trust_in_Newcomers": lambda m: m.trust_in_newcomers(),
+                "Trust_in_Newcomers": lambda m: m.trust_in_newcomers()
             }
         )
         self.trustedStrangersAllAgents = [0 for a in self.schedule.agents]
