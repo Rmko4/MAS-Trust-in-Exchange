@@ -86,9 +86,11 @@ class PDTModel(Model):
                 "Trust_Rate": lambda m: m.trust_rate(),
                 "Cooperating_Agents": lambda m: m.cooperating_agents(),
                 "Trust_in_Neighbors": lambda m: m.trust_in_neighbors(),
-                "Trust_in_Newcomers": lambda m: m.trust_in_newcomers()
+                "Trust_in_Newcomers": lambda m: m.trust_in_newcomers(),
             }
         )
+        self.trustedStrangersAllAgents = [0 for a in self.schedule.agents]
+        self.numberPlayedStrangersAllAgents = [0 for a in self.schedule.agents]
 
     def step(self):
         """ Lets the scheduler execute a step for all agents. Afterward, the nework pairs
@@ -102,6 +104,7 @@ class PDTModel(Model):
 
         if self.record:
             self.datacollector.collect(self)
+            self.collectTrustInStrangersAllAgents()
         self.schedule.finalize()
 
     def run_model(self, T_onset=1000, T_record=1000) -> None:
@@ -116,6 +119,20 @@ class PDTModel(Model):
         for _ in range(T_record):
             self.step()
         self.running = False
+
+    def collectTrustInStrangersAllAgents(self) -> None:
+        """ Writes down for each agent if it played against a stranger and if yes, if it collaborated
+        """
+        l1 = [1 if a.play and a.stranger_partner else 0 for a in self.schedule.agents]
+        l2 = [1 if a.stranger_partner else 0 for a in self.schedule.agents]
+
+        self.trustedStrangersAllAgents = [sum(x) for x in zip(self.trustedStrangersAllAgents,l1)]
+        self.numberPlayedStrangersAllAgents = [sum(x) for x in zip(self.numberPlayedStrangersAllAgents,l2)]
+
+    def trustInStrangersByAgent(self):
+        """Returns the likelihood for each agent to trust a stranger
+        """
+        return [(float)(0) if y == 0 else x/y for (x,y) in zip(self.trustedStrangersAllAgents, self.numberPlayedStrangersAllAgents)]
 
     def market_size(self) -> float:
         """ Returns the percentage out of all agents which currently is in the global market.
@@ -141,9 +158,10 @@ class PDTModel(Model):
         """
         a_with_stranger_partners = [
             a for a in self.schedule.agents if a.stranger_partner]
-        if  len(a_with_stranger_partners) == 0:
+        if len(a_with_stranger_partners) == 0:
             return 0
         return len([a for a in a_with_stranger_partners if a.play]) / len(a_with_stranger_partners)
+
 
     def trust_in_neighbors(self) -> float:
         """ Returns the percentage out of all agents matched with a neighbour that have decided
@@ -168,3 +186,4 @@ class PDTModel(Model):
         """ Returns the mean value of the probability to trust another agent amongst all agents.
         """
         return np.mean([a.trust_prob for a in self.schedule.agents])
+
