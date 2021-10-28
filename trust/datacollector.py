@@ -37,6 +37,6 @@ class PDTDataCollector(DataCollector):
         
         return agent_proportions_vars
             
-    def get_agent_proportions_dataframe(self):
+    def get_agent_props_dataframe(self):
         agent_proportions = self._get_proportions()
         return pd.DataFrame(agent_proportions)
