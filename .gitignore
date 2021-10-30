@@ -137,3 +137,4 @@ dmypy.json
 
 # Workspace specific
 data/*
+!data/.gitkeep
