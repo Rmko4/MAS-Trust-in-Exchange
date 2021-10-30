@@ -136,4 +136,4 @@ dmypy.json
 !.vscode/extensions.json
 
 # Workspace specific
-data/
+data/*

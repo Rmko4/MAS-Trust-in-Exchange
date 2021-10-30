@@ -1,11 +1,13 @@
-from mesa.datacollection import DataCollector
+from typing import Dict, Tuple
+
 import numpy as np
 import pandas as pd
+from mesa.datacollection import DataCollector
 
 
 class PDTDataCollector(DataCollector):
     def __init__(self, model_reporters: dict = None, agent_reporters: dict = None,
-                 tables: dict = None, proportion_reporters: dict[str, tuple[str, str]] = None):
+                 tables: dict = None, proportion_reporters: Dict[str, Tuple[str, str]] = None):
         super().__init__(model_reporters, agent_reporters, tables)
         self.proportion_reporters = proportion_reporters
 
