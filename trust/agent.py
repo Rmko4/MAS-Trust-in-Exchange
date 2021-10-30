@@ -201,7 +201,6 @@ class BaseAgent(Agent):
     @property
     def paired_with_stranger(self) -> bool:
         return self.partner_is_stranger and self.paired
-        
 
 
 class MSAgent(BaseAgent):
@@ -336,7 +335,7 @@ class RLAgent(WHAgent):
             return prob + self.learning_rate * prob * payoff
 
 
-class GossipAgent(WHAgent):
+class GossipAgentBase(WHAgent):
     """ Implementation of the Gossip agent, extends a WHAgent.
 
         This agent asks the role model whether or not the agent he has
@@ -345,13 +344,7 @@ class GossipAgent(WHAgent):
         prisoners' dilemma.
     """
 
-    def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int,
-                 memory_size: int) -> None:
-        """ Complementary to the init of its super, this agent also creates
-            a list of previous experiences with other agents.
-        """
-        super().__init__(unique_id, model, neighbourhood)
-
+    def __init__(self, memory_size: int) -> None:
         self.memories: LimitedDict[int, bool] = LimitedDict(memory_size)
 
     def finalize(self) -> None:
@@ -359,7 +352,7 @@ class GossipAgent(WHAgent):
             self.memorize_trust()
         return super().finalize()
 
-    def decide_play(self, exchange_partner: 'GossipAgent') -> None:
+    def decide_play(self, exchange_partner: 'GossipAgentBase') -> None:
         """ Updates the agents decision to play or exit a prisoners' dilemma.
 
             First, the role model is updated. If the agent has had a positive
@@ -395,3 +388,18 @@ class GossipAgent(WHAgent):
             self.memories[self.exchange_partner.unique_id] = True
         else:
             self.memories[self.exchange_partner.unique_id] = False
+
+
+class GossipAgent(GossipAgentBase):
+    def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int,
+                 memory_size: int) -> None:
+        super().__init__(memory_size)
+        super(WHAgent, self).__init__(unique_id, model, neighbourhood)
+
+
+class RLGossipAgent(GossipAgentBase, RLAgent):
+    def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int, memory_size: int,
+                 learning_rate: float, relative_reward: bool = False) -> None:
+        super().__init__(memory_size)
+        RLAgent.__init__(self, unique_id, model, neighbourhood,
+                         learning_rate, relative_reward=relative_reward)

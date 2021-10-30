@@ -15,7 +15,7 @@ def pop_keys(dict: dict, keys: List[str]):
 def parse_args(print_args=False):
     parser = argparse.ArgumentParser(description='MAS for trust in exchange')
     parser.add_argument('-a', '--agent-class', dest='AgentClass', default='MSAgent',
-                        choices=['MSAgent', 'WHAgent', 'RLAgent', 'GossipAgent'])
+                        choices=['MSAgent', 'WHAgent', 'RLAgent', 'GossipAgent', 'RLGossipAgent'])
     parser.add_argument('-m', '--mobility-rate', default=0.2,
                         type=float, choices=[Range(0.0, 1.0)])
     parser.add_argument('-N', '--number-of-agents', default=1000,
@@ -33,7 +33,7 @@ def parse_args(print_args=False):
     parser.add_argument('-t1', '--T_onset', default='100',
                         type=int, choices=[Range(0, int(1e6))])
     parser.add_argument('-t2', '--T_record', default='1000',
-                        type=int, choices=[Range(0, int(1e6))])
+                        type=int, choices=[Range(1, int(1e6))])
     parser.add_argument('--save-filename', default='data.csv',
                         help='Saves to /m_SAVE-FILENAME and /a_SAVE-FILENAME')
 
@@ -42,10 +42,10 @@ def parse_args(print_args=False):
     if args.neighbourhood_size > args.number_of_agents:
         raise ValueError(
             f'neighbourhood-size={args.neighbourhood_size} is larger than number-of-agents={args.number_of_agents}')
-    if args.AgentClass != 'RLAgent':
+    if args.AgentClass not in ['RLAgent', 'RLGossipAgent']:
         del args.learning_rate
         del args.relative_reward
-    if args.AgentClass != 'GossipAgent':
+    if args.AgentClass not in ['GossipAgent', 'RLGossipAgent']:
         del args.memory_size
 
     kwargs = vars(args)
