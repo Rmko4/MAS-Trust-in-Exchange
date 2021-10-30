@@ -335,7 +335,7 @@ class RLAgent(WHAgent):
             return prob + self.learning_rate * prob * payoff
 
 
-class GossipAgentBase(WHAgent):
+class BaseGossipAgent(WHAgent):
     """ Implementation of the Gossip agent, extends a WHAgent.
 
         This agent asks the role model whether or not the agent he has
@@ -352,7 +352,7 @@ class GossipAgentBase(WHAgent):
             self.memorize_trust()
         return super().finalize()
 
-    def decide_play(self, exchange_partner: 'GossipAgentBase') -> None:
+    def decide_play(self, exchange_partner: 'BaseGossipAgent') -> None:
         """ Updates the agents decision to play or exit a prisoners' dilemma.
 
             First, the role model is updated. If the agent has had a positive
@@ -370,15 +370,19 @@ class GossipAgentBase(WHAgent):
         """
         super(WHAgent, self).decide_play(exchange_partner)
 
-        role_model: 'GossipAgent' = self.model.network.get_role_model(
+        role_model: 'BaseGossipAgent' = self.model.network.get_role_model(
             self.neighbourhood)
 
         partner_id = self.exchange_partner.unique_id
-        if partner_id in role_model.memories:
+
+        if partner_id in self.memories:
+            memory = self.memories[partner_id]
+            self.play = memory
+        elif partner_id in role_model.memories:
             advice = role_model.memories[partner_id]
-            self.play = True if advice == True else False
+            self.play = advice
         else:
-            # If you don't trust him, use signal reading
+            # If you don't trust partner, use signal reading
             self.signal_reading()
 
     def memorize_trust(self) -> None:
@@ -390,14 +394,14 @@ class GossipAgentBase(WHAgent):
             self.memories[self.exchange_partner.unique_id] = False
 
 
-class GossipAgent(GossipAgentBase):
+class GossipAgent(BaseGossipAgent):
     def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int,
                  memory_size: int) -> None:
         super().__init__(memory_size)
         super(WHAgent, self).__init__(unique_id, model, neighbourhood)
 
 
-class RLGossipAgent(GossipAgentBase, RLAgent):
+class RLGossipAgent(BaseGossipAgent, RLAgent):
     def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int, memory_size: int,
                  learning_rate: float, relative_reward: bool = False) -> None:
         super().__init__(memory_size)
