@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "run.py",
             "cwd": "${workspaceRoot}",
-            "args": ["-a=RLAgent", "-n=50", "-N=1000", "-t1=1", "-t2=25"],
+            "args": ["-a=RLGossipAgent", "-n=50", "-N=1000", "-t1=1", "-t2=25"],
             "console": "integratedTerminal",
             "justMyCode": false
         }

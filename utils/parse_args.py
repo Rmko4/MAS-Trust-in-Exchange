@@ -24,11 +24,13 @@ def parse_args(print_args=False):
                         default=30, type=int, choices=[Range(0, 10000)])
 
     parser.add_argument('-l', '--learning-rate', default=0.02,
-                        type=float, choices=[Range(0.0, 1.0)], help='Only for RLAgent')
+                        type=float, choices=[Range(0.0, 1.0)], help='Only for RLAgent and RLGossipAgent')
+    parser.add_argument('-sl', '--social-learning-rate', default=0.5,
+                        type=float, choices=[Range(0.0, 1.0)], help='Only for RLAgent and RLGossipAgent')
     parser.add_argument('-r', '--relative-reward', default=False,
-                        type=bool, choices=[True, False], help='Only for RLAgent')
+                        type=bool, choices=[True, False], help='Only for RLAgent and RLGossipAgent')
     parser.add_argument('-ms', '--memory-size', default=25,
-                        type=bool, choices=[Range(0, 10000)], help='Only for GossipAgent')
+                        type=bool, choices=[Range(0, 10000)], help='Only for GossipAgent and RLGossipAgent')
 
     parser.add_argument('-t1', '--T_onset', default='100',
                         type=int, choices=[Range(0, int(1e6))])
@@ -44,6 +46,7 @@ def parse_args(print_args=False):
             f'neighbourhood-size={args.neighbourhood_size} is larger than number-of-agents={args.number_of_agents}')
     if args.AgentClass not in ['RLAgent', 'RLGossipAgent']:
         del args.learning_rate
+        del args.social_learning_rate
         del args.relative_reward
     if args.AgentClass not in ['GossipAgent', 'RLGossipAgent']:
         del args.memory_size

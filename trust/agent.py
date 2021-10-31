@@ -37,10 +37,11 @@ class BaseAgent(Agent):
         # Propensity to enter the open market
         self.location_prob = self.random.random()
 
+        self.social_learning_rate = 0.5
+
         self.play = True
         self.pdtchoice = PDTChoice.COOPERATE
         self.in_market = False
-        self.read_signal = False
         self.paired = False
 
         self.partner_is_stranger = False
@@ -154,6 +155,21 @@ class BaseAgent(Agent):
         else:
             return prob + prob * payoff
 
+    def update_propensity(self, action_prob_attr: str, action_test: bool) -> None:
+        role_model = self.model.network.get_role_model(self.neighbourhood)
+        social_learning = role_model is not None and role_model is not self
+
+        if social_learning and self.random.random() > self.social_learning_rate:
+            prob = getattr(role_model, action_prob_attr)
+        elif not action_test:
+            prob = 1 - \
+                self.stochastic_learning(
+                    1 - getattr(self, action_prob_attr), self.payoff)
+        else:
+            prob = self.stochastic_learning(
+                getattr(self, action_prob_attr), self.payoff)
+        setattr(self, action_prob_attr, prob)
+
     def update_behaviour(self):
         """ Updates the behaviour of the agent.
 
@@ -163,36 +179,10 @@ class BaseAgent(Agent):
             defect on reading signals instead of Parochialism) and propensity to either
             cooperate or defect are updated.
         """
-        role_model = self.model.network.get_role_model(self.neighbourhood)
-        social_learning = role_model is not None and role_model is not self
-
-        if social_learning and self.random.random() > 0.5:
-            self.location_prob = role_model.location_prob
-        elif not self.in_market:
-            self.location_prob = 1 - \
-                self.stochastic_learning(1 - self.location_prob, self.payoff)
-        else:
-            self.location_prob = self.stochastic_learning(
-                self.location_prob, self.payoff)
-
-        if social_learning and self.random.random() > 0.5:
-            self.trust_prob = role_model.trust_prob
-        elif not self.read_signal:
-            self.trust_prob = 1 - \
-                self.stochastic_learning(1 - self.trust_prob, self.payoff)
-        else:
-            self.trust_prob = self.stochastic_learning(
-                self.trust_prob, self.payoff)
-
-        if social_learning and self.random.random() > 0.5:
-            self.trustworthiness_prob = role_model.trustworthiness_prob
-        elif self.pdtchoice == PDTChoice.COOPERATE:
-            self.trustworthiness_prob = 1 - \
-                self.stochastic_learning(
-                    1 - self.trustworthiness_prob, self.payoff)
-        else:
-            self.trustworthiness_prob = self.stochastic_learning(
-                self.trustworthiness_prob, self.payoff)
+        self.update_propensity('location_prob', self.in_market)
+        self.update_propensity('trustworthiness_prob',
+                               self.pdtchoice == PDTChoice.COOPERATE)
+        self.update_propensity('trust_prob', self.play)
 
     @property
     def trust_in_stranger(self) -> bool:
@@ -230,6 +220,10 @@ class WHAgent(BaseAgent):
         the prisoners' dilemma with the agent he is matched with is different for known agents
         and stangers.
     """
+
+    def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int) -> None:
+        super().__init__(unique_id, model, neighbourhood)
+        self.read_signal = False
 
     def decide_play(self, exchange_partner: 'WHAgent') -> None:
         """ Updates the agents decision to play or exit a prisoners' dilemma.
@@ -292,6 +286,21 @@ class WHAgent(BaseAgent):
         # Returns opposite signal of the PDT choice
         return PDTChoice.COOPERATE if self.pdtchoice == PDTChoice.DEFECT else PDTChoice.DEFECT
 
+    def update_behaviour(self):
+        """ Updates the behaviour of the agent.
+
+            Updates the role model of the agent, i.e. the most successfull agent of the
+            neighbourhood. Also, the values for the propensity to enter the global market,
+            propensity to read signals (I.e. base its decision to either cooperate or
+            defect on reading signals instead of Parochialism) and propensity to either
+            cooperate or defect are updated.
+        """
+        self.update_propensity('location_prob', self.in_market)
+        self.update_propensity('trustworthiness_prob',
+                               self.pdtchoice == PDTChoice.COOPERATE)
+        # Here the trust_prob is updated on the action of reading the signal
+        self.update_propensity('trust_prob', self.read_signal)
+
 
 class RLAgent(WHAgent):
     """ Implementation of the Reinforcement Learning agent, extends a WHAgent.
@@ -301,7 +310,7 @@ class RLAgent(WHAgent):
     """
 
     def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int,
-                 learning_rate: float, relative_reward: bool = False) -> None:
+                 learning_rate: float, social_learning_rate: float = 0.5, relative_reward: bool = False) -> None:
         super().__init__(unique_id, model, neighbourhood)
 
         self.total_payoff = 0
@@ -309,6 +318,8 @@ class RLAgent(WHAgent):
 
         # The learning rate for the reinforcement learning mechanism
         self.learning_rate = learning_rate
+        # The learning rate for social learning from the role model
+        self.social_learning_rate = social_learning_rate
         # Whether or not to use the relative reward for learning
         self.relative_reward = relative_reward
 
@@ -403,7 +414,7 @@ class GossipAgent(BaseGossipAgent):
 
 class RLGossipAgent(BaseGossipAgent, RLAgent):
     def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int, memory_size: int,
-                 learning_rate: float, relative_reward: bool = False) -> None:
+                 learning_rate: float, social_learning_rate: float = 0.5, relative_reward: bool = False) -> None:
         super().__init__(memory_size)
         RLAgent.__init__(self, unique_id, model, neighbourhood,
-                         learning_rate, relative_reward=relative_reward)
+                         learning_rate, social_learning_rate, relative_reward=relative_reward)
