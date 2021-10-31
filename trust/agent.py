@@ -309,12 +309,15 @@ class RLAgent(WHAgent):
     """
 
     def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int,
-                 learning_rate: float, social_learning_rate: float = 0.5, relative_reward: bool = False) -> None:
+                 learning_rate: float, discount_factor: float = 0.9,
+                 social_learning_rate: float = 0.5, relative_reward: bool = False) -> None:
         super().__init__(unique_id, model, neighbourhood)
 
         self.total_payoff = 0
         self.n_payoffs = 0
 
+        # The factor with which the previous cumulative reward is discounted
+        self.discount_factor = discount_factor
         # The learning rate for the reinforcement learning mechanism
         self.learning_rate = learning_rate
         # The learning rate for social learning from the role model
@@ -326,7 +329,8 @@ class RLAgent(WHAgent):
         """ Saves the payoff of the current step and adds it to the agent's cumulative payoff.
             Also updates the total payoff value, and the total amount of payoffs.
         """
-        super().receive_payoff(payoff)
+        self.payoff = payoff
+        self.cumulative_payoff = self.discount_factor * self.cumulative_payoff + payoff
         self.total_payoff += payoff
         self.n_payoffs += 1
 
@@ -412,8 +416,7 @@ class GossipAgent(BaseGossipAgent):
 
 
 class RLGossipAgent(BaseGossipAgent, RLAgent):
-    def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int, memory_size: int,
-                 learning_rate: float, social_learning_rate: float = 0.5, relative_reward: bool = False) -> None:
+    def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int, **kwargs) -> None:
+        memory_size = kwargs.pop('memory_size')
         super().__init__(memory_size)
-        RLAgent.__init__(self, unique_id, model, neighbourhood,
-                         learning_rate, social_learning_rate, relative_reward=relative_reward)
+        RLAgent.__init__(self, unique_id, model, neighbourhood, **kwargs)

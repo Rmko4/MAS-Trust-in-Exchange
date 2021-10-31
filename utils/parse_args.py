@@ -27,8 +27,11 @@ def parse_args(print_args=False):
                         type=float, choices=[Range(0.0, 1.0)], help='Only for RLAgent and RLGossipAgent')
     parser.add_argument('-sl', '--social-learning-rate', default=0.5,
                         type=float, choices=[Range(0.0, 1.0)], help='Only for RLAgent and RLGossipAgent')
+    parser.add_argument('-df', '--discount-factor', default=1.0,
+                        type=float, choices=[Range(0.0, 1.0)], help='Only for RLAgent and RLGossipAgent')
     parser.add_argument('-r', '--relative-reward', default=False,
                         type=bool, choices=[True, False], help='Only for RLAgent and RLGossipAgent')
+
     parser.add_argument('-ms', '--memory-size', default=25,
                         type=bool, choices=[Range(0, 10000)], help='Only for GossipAgent and RLGossipAgent')
 
@@ -47,6 +50,7 @@ def parse_args(print_args=False):
     if args.AgentClass not in ['RLAgent', 'RLGossipAgent']:
         del args.learning_rate
         del args.social_learning_rate
+        del args.discount_factor
         del args.relative_reward
     if args.AgentClass not in ['GossipAgent', 'RLGossipAgent']:
         del args.memory_size
