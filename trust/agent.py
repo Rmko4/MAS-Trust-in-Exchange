@@ -386,12 +386,12 @@ class BaseGossipAgent(WHAgent):
 
         partner_id = self.exchange_partner.unique_id
 
-        if partner_id in self.memories:
-            memory = self.memories[partner_id]
-            self.play = memory
-        elif partner_id in role_model.memories:
+        if partner_id in role_model.memories:
             advice = role_model.memories[partner_id]
             self.play = advice
+        elif partner_id in self.memories:
+            memory = self.memories[partner_id]
+            self.play = memory
         else:
             # If you don't trust partner, use signal reading
             self.signal_reading()
