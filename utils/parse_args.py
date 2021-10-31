@@ -29,7 +29,7 @@ def parse_args(print_args=False):
                         type=float, choices=[Range(0.0, 1.0)], help='Only for RLAgent and RLGossipAgent')
     parser.add_argument('-df', '--discount-factor', default=1.0,
                         type=float, choices=[Range(0.0, 1.0)], help='Only for RLAgent and RLGossipAgent')
-    parser.add_argument('-r', '--relative-reward', default=False,
+    parser.add_argument('-r', '--relative-reward', default=True,
                         type=bool, choices=[True, False], help='Only for RLAgent and RLGossipAgent')
 
     parser.add_argument('-ms', '--memory-size', default=25,

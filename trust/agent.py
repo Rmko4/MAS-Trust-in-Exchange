@@ -139,7 +139,7 @@ class BaseAgent(Agent):
         self.model.network.remove_agent_from_market(self)
         self.in_market = False
 
-    def receive_payoff(self, payoff):
+    def receive_payoff(self, payoff: float):
         """ Saves the payoff of the current step and adds it to the agent's cumulative payoff.
         """
         self.payoff = payoff
@@ -312,8 +312,6 @@ class RLAgent(WHAgent):
                  learning_rate: float, discount_factor: float = 0.9,
                  social_learning_rate: float = 0.5, relative_reward: bool = False) -> None:
         super().__init__(unique_id, model, neighbourhood)
-
-        self.total_payoff = 0
         self.n_payoffs = 0
 
         # The factor with which the previous cumulative reward is discounted
@@ -325,14 +323,13 @@ class RLAgent(WHAgent):
         # Whether or not to use the relative reward for learning
         self.relative_reward = relative_reward
 
-    def receive_payoff(self, payoff):
+    def receive_payoff(self, payoff: float):
         """ Saves the payoff of the current step and adds it to the agent's cumulative payoff.
             Also updates the total payoff value, and the total amount of payoffs.
         """
         self.payoff = payoff
-        self.cumulative_payoff = self.discount_factor * self.cumulative_payoff + payoff
-        self.total_payoff += payoff
-        self.n_payoffs += 1
+        self.cumulative_payoff = payoff + self.discount_factor * self.cumulative_payoff
+        self.n_payoffs = 1 + self.discount_factor * self.n_payoffs
 
     # Overrides default stochastic learning behaviour
     def stochastic_learning(self, prob: float, payoff: float) -> float:
@@ -341,7 +338,7 @@ class RLAgent(WHAgent):
         """
         if (self.relative_reward and self.n_payoffs > 0):
             # Use the relative reward which is the current reward minus the average reward
-            payoff = payoff - self.total_payoff / self.n_payoffs
+            payoff = payoff - self.cumulative_payoff / self.n_payoffs
 
         if payoff >= 0:
             return prob + self.learning_rate * (1 - prob) * payoff
