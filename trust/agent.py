@@ -121,7 +121,6 @@ class BaseAgent(Agent):
         self.model.network.add_agent_to_neighbourhood(self, new_nbh)
 
         self.newcomer = True
-        self.cumulative_payoff = 0
 
     def stay(self) -> None:
         """ Removes the newcomer mark from an agent.
