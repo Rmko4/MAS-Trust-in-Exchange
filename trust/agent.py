@@ -158,7 +158,7 @@ class BaseAgent(Agent):
         role_model = self.model.network.get_role_model(self.neighbourhood)
         social_learning = role_model is not None and role_model is not self
 
-        if social_learning and self.random.random() > self.social_learning_rate:
+        if social_learning and self.random.random() < self.social_learning_rate:
             prob = getattr(role_model, action_prob_attr)
         elif not action_test:
             prob = 1 - \
