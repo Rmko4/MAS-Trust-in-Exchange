@@ -25,12 +25,18 @@ if (len(sys.argv) == 3 ):
     elif sys.argv[2] == 'WHAgent':
         print('WHAgent')
         model_args = {'AgentClass': 'WHAgent', 'mobility_rate': 0.2, 'number_of_agents': 1000, 'neighbourhood_size': 30}
-    elif (sys.argv[2] == "GossipAgent"):
-        print("GossipAgent")
-        model_args = {'AgentClass': "GossipAgent", 'mobility_rate': 0.2, 'number_of_agents': 1000, 'neighbourhood_size': 30,"memory_size": 25}  
+    elif (sys.argv[2] == "RLAgent_NO_RELATIVE"):
+        print("RLAgent")
+        model_args = {'AgentClass': 'RLAgent', 'mobility_rate': 0.2, 'number_of_agents': 1000, 'neighbourhood_size': 30, 'learning_rate': 0.02, 'social_learning_rate': 0.5, 'discount_factor': 1.0, 'relative_reward': False}
+    elif (sys.argv[2] == "RLAgent_NO_SOCIAL"):
+        print("RLAgent")
+        model_args = {'AgentClass': 'RLAgent', 'mobility_rate': 0.2, 'number_of_agents': 1000, 'neighbourhood_size': 30, 'learning_rate': 0.02, 'social_learning_rate': 0, 'discount_factor': 1.0, 'relative_reward': True}
     elif (sys.argv[2] == "RLAgent"):
         print("RLAgent")
-        model_args = {'AgentClass': 'RLAgent', 'mobility_rate': 0.2, 'number_of_agents': 1000, 'neighbourhood_size': 30, 'learning_rate': 0.05, 'relative_reward': False}
+        model_args = {'AgentClass': 'RLAgent', 'mobility_rate': 0.2, 'number_of_agents': 1000, 'neighbourhood_size': 30, 'learning_rate': 0.02, 'social_learning_rate': 0.5, 'discount_factor': 1.0, 'relative_reward': True}  
+    elif (sys.argv[2] == "RLGossipAgent"):
+        print("RLGossipAgent")
+        model_args = {'AgentClass': 'RLGossipAgent', 'mobility_rate': 0.2, 'number_of_agents': 1000, 'neighbourhood_size': 30, 'learning_rate': 0.05, 'social_learning_rate': 0.5, 'discount_factor': 1.0, 'relative_reward': True, 'memory_size': 25}
     else:
         print("invalid agent type. choices are 'MSAgent', 'WHAgent', 'RLAgent' or 'GossipAgent'")
         sys.exit()
@@ -38,7 +44,11 @@ else:
     print('MSAgent')
     model_args = {'AgentClass': 'MSAgent', 'mobility_rate': 0.2, 'number_of_agents': 1000, 'neighbourhood_size': 30} 
 
-run_args = {'T_onset': 100, 'T_record': 100}
+run_args = {'T_onset': 100, 'T_record': 300}
+
+print("Model params: " + str(model_args))
+print("Run params: " + str(run_args))
+
 
 with open(str(sys.argv[1]) + ".out", 'w') as f:
     with open(str(sys.argv[1]) + "TrustDensity.out", 'w') as g:
@@ -56,14 +66,16 @@ with open(str(sys.argv[1]) + ".out", 'w') as f:
                 model = PDTModel(**model_args)
 
                 model.run_model(**run_args)
-                df = model.datacollector.get_model_vars_dataframe()
+                df_m = model.datacollector.get_model_vars_dataframe()
+                df_a = model.datacollector.get_agent_props_dataframe()
 
-                f.write(str(df["Market_Size"].mean()) + " ")
-                f.write(str(df["Trust_in_Strangers"].mean()) + " ")
-                f.write(str(df["Signal_Reading"].mean()) + " ")
-                f.write(str(df["Trust_Rate"].mean()) + " ")
-                f.write(str(df["Cooperating_Agents"].mean()) + " ")
-                f.write(str(df["Trust_in_Neighbors"].mean()) + " ")
-                f.write(str(df["Trust_in_Newcomers"].mean()) + "\n")
-                g.write(str(model.trust_in_strangers_by_agent()) + "\n")
-
+                f.write(str(df_m["Market_Size"].mean()) + " ")
+                f.write(str(df_m["Trust_in_Strangers"].mean()) + " ")
+                f.write(str(df_m["Signal_Reading"].mean()) + " ")
+                f.write(str(df_m["Trust_Rate"].mean()) + " ")
+                f.write(str(df_m["Cooperating_Agents"].mean()) + " ")
+                f.write(str(df_m["Trust_in_Neighbors"].mean()) + " ")
+                f.write(str(df_m["Trust_in_Newcomers"].mean()) + "\n")
+                for value in df_a["Trust_in_Stranger_proportion"]:
+                    g.write(str(value) + " ")
+                g.write("\n")

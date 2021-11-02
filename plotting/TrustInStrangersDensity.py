@@ -25,8 +25,23 @@ def lineToList(data):
     data = data.replace("[","")
     data = data.replace("]","")
     data = data.replace("'","")
-    data = data.replace(" ","")
-    return [float(x) for x in data.split(",")]
+    #data = data.replace(" ","")
+    retList = []
+
+    for x in data.split(" "):
+        if x == "":
+            continue
+        if x == "nan":
+            retList.append(float(0))
+            continue
+        try:
+            retList.append(float(x))
+        except ValueError:
+            retList.append(float(0))
+            continue
+    print(retList)
+    input()
+    return retList #[float(x) for x in data.split(" ") if x != ""]
 
 for i,mob_rate in enumerate(np.arange(mob_rate_min,mob_rate_max + 0.0001,mob_rate_stepsize)):
     density = gaussian_kde(lineToList(lines[i+1]))
