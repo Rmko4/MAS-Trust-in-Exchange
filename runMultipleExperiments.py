@@ -27,16 +27,16 @@ if (len(sys.argv) == 3 ):
         model_args = {'AgentClass': 'WHAgent', 'mobility_rate': 0.2, 'number_of_agents': 1000, 'neighbourhood_size': 30}
     elif (sys.argv[2] == "RLAgent_NO_RELATIVE"):
         print("RLAgent")
-        model_args = {'AgentClass': 'RLAgent', 'mobility_rate': 0.2, 'number_of_agents': 1000, 'neighbourhood_size': 30, 'learning_rate': 0.02, 'social_learning_rate': 0.5, 'discount_factor': 1.0, 'relative_reward': False}
+        model_args = {'AgentClass': 'RLAgent', 'mobility_rate': 0.2, 'number_of_agents': 1000, 'neighbourhood_size': 30, 'learning_rate': 0.02, 'social_learning_rate': 0.1, 'discount_factor': 0.8, 'relative_reward': False}
     elif (sys.argv[2] == "RLAgent_NO_SOCIAL"):
         print("RLAgent")
-        model_args = {'AgentClass': 'RLAgent', 'mobility_rate': 0.2, 'number_of_agents': 1000, 'neighbourhood_size': 30, 'learning_rate': 0.02, 'social_learning_rate': 0, 'discount_factor': 1.0, 'relative_reward': True}
+        model_args = {'AgentClass': 'RLAgent', 'mobility_rate': 0.2, 'number_of_agents': 1000, 'neighbourhood_size': 30, 'learning_rate': 0.02, 'social_learning_rate': 0, 'discount_factor': 0.8, 'relative_reward': True}
     elif (sys.argv[2] == "RLAgent"):
         print("RLAgent")
-        model_args = {'AgentClass': 'RLAgent', 'mobility_rate': 0.2, 'number_of_agents': 1000, 'neighbourhood_size': 30, 'learning_rate': 0.02, 'social_learning_rate': 0.5, 'discount_factor': 1.0, 'relative_reward': True}  
+        model_args = {'AgentClass': 'RLAgent', 'mobility_rate': 0.2, 'number_of_agents': 1000, 'neighbourhood_size': 30, 'learning_rate': 0.02, 'social_learning_rate': 0.5, 'discount_factor': 0.8, 'relative_reward': True}  
     elif (sys.argv[2] == "RLGossipAgent"):
         print("RLGossipAgent")
-        model_args = {'AgentClass': 'RLGossipAgent', 'mobility_rate': 0.2, 'number_of_agents': 1000, 'neighbourhood_size': 30, 'learning_rate': 0.05, 'social_learning_rate': 0.5, 'discount_factor': 1.0, 'relative_reward': True, 'memory_size': 25}
+        model_args = {'AgentClass': 'RLGossipAgent', 'mobility_rate': 0.2, 'number_of_agents': 1000, 'neighbourhood_size': 30, 'learning_rate': 0.05, 'social_learning_rate': 0.5, 'discount_factor': 0.8, 'relative_reward': True, 'memory_size': 25}
     else:
         print("invalid agent type. choices are 'MSAgent', 'WHAgent', 'RLAgent' or 'GossipAgent'")
         sys.exit()
@@ -44,7 +44,7 @@ else:
     print('MSAgent')
     model_args = {'AgentClass': 'MSAgent', 'mobility_rate': 0.2, 'number_of_agents': 1000, 'neighbourhood_size': 30} 
 
-run_args = {'T_onset': 100, 'T_record': 300}
+run_args = {'T_onset': 100, 'T_record': 100}
 
 print("Model params: " + str(model_args))
 print("Run params: " + str(run_args))

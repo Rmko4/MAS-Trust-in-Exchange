@@ -296,7 +296,7 @@ class WHAgent(BaseAgent):
         """
         self.update_propensity('location_prob', self.in_market)
         self.update_propensity('trustworthiness_prob',
-                               self.pdtchoice == PDTChoice.COOPERATE)
+                               self.pdtchoice != PDTChoice.COOPERATE)
         # Here the trust_prob is updated on the action of reading the signal
         self.update_propensity('trust_prob', self.read_signal)
 
