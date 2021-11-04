@@ -30,7 +30,7 @@ class BaseAgent(Agent):
         self.neighbourhood = neighbourhood
         self.newcomer = False
 
-        # Equivalent to the propensity to read signals
+        # Equivalent to the propensity to play or read signals
         self.trust_prob = self.random.random()
         # Propensity to cooperate (over defect)
         self.trustworthiness_prob = self.random.random()
@@ -393,8 +393,10 @@ class BaseGossipAgent(WHAgent):
             advice = role_model.memories[partner_id]
             self.play = advice
         else:
-            # If you don't trust partner, use signal reading
-            self.signal_reading()
+            if self.random.random() < self.trust_prob:
+                self.signal_reading()
+            else:
+                self.parochialism()
 
     def memorize_trust(self) -> None:
         """ TODO
