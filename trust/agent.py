@@ -14,15 +14,15 @@ if TYPE_CHECKING:
 class BaseAgent(Agent):
     """ Defines a base agent, which is an implementation of an Agent as defined by the MESA module.
     """
-
     def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int) -> None:
         """ Initializes the baseAgent. Saves the neighbourhood that the agent is in, and does not
-            mark it as a newcomer. Initializs the propensity to read signals (antagonist
+            mark it as a newcomer. Initializes the propensity to read signals (antagonist
             parochialism), propensity to cooperate and propensity to enter the open market (over
-            staying in the neighbourhood) to a random value between 0.0 and 1.0. It also sets
-            the variable keeping track of the cumulative payoff to zero. This variable will be
-            updated after every interaction with another agent, based on the outcome of the
-            prisoners' dilemma (or the exit cost if the agents decides not to play).
+            staying in the neighbourhood) to random values between 0.0 and 1.0. Also, the social
+            learning rate is set to 0.5 and the variable keeping track of both the current and
+            cumulative payoffs are set to zero. This variable will be updated after every
+            interaction with another agent, based on the outcome of the prisoners' dilemma
+            (or the exit cost if the agents decides not to play).
         """
         super().__init__(unique_id, model)
         self.model: 'PDTModel'
@@ -51,24 +51,22 @@ class BaseAgent(Agent):
         self.cumulative_payoff = 0
 
     def step(self) -> None:
-        """ Every step, the agent moves to a new neigbhourhood with a certain probability
+        """ Every step, the agent involuntarily moves to a new neigbhourhood with a certain probability
             as defined by the mobility rate. Also, the agent chooses (based on the location
             probability) wether to stay in the neighbourhood or move to the global market
             for its next interaction.
         """
-        # Change neighbourhood involuntary
         if self.random.random() < self.model.mobility_rate:
             self.move()
         else:
             self.stay()
 
-        # Chose to exchange in neighbourhood or market
         if self.random.random() < self.location_prob:
             self.enter_market()
 
     def finalize(self) -> None:
         """ If the agent is paired with another agent, it will update its behaviour (i.e. its
-            decision to play or exit and to cooperate or defect in the prisoners' dilema).
+            decision to play/exit and to cooperate/defect in the prisoners' dilemma).
             Afterwards, the variable paired is reset to False and the agent will leave the
             global market (if it was there).
         """
@@ -90,12 +88,11 @@ class BaseAgent(Agent):
             self.pdtchoice = PDTChoice.DEFECT
 
     def decide_play(self, exchange_partner: 'BaseAgent') -> None:
-        """ The dicison whether or not to play the prisoners' dilemma is dependent on the
-            type of agent and thus not implemented for the base agent.
-
-            Returns a NotImplementedError in case the type of agent is not specified (this
-            should not happen).
-            TODO: update doc, as this should now be called from sub
+        """ Updates whether or not the agent the current agent has been matched with is
+            a newcomer, and whether or not it is a stranger. This method is called from the
+            subclass (so for example the GossipAgent) in their own decide_play method, where
+            the agent still needs to decide to play for itself as this is different per agent
+            type. 
         """
         self.paired = True
         self.exchange_partner = exchange_partner
@@ -115,7 +112,6 @@ class BaseAgent(Agent):
             the agent as a newcomer and resets its cumulative payoff.
         """
         new_nbh = self.random.randint(0, self.model.num_neighbourhoods - 1)
-        # Ensure that it won't stay in the same neighbourhood
         if new_nbh >= self.neighbourhood:
             new_nbh = (new_nbh + 1) % (self.model.num_neighbourhoods - 1)
         self.model.network.add_agent_to_neighbourhood(self, new_nbh)
@@ -155,6 +151,10 @@ class BaseAgent(Agent):
             return prob + prob * payoff
 
     def update_propensity(self, action_prob_attr: str, action_test: bool) -> None:
+        """ Updates the passed propensity according to the learning rate. At this moment, this
+            is used to update the propensity to play or read signals, the propensity to
+            cooperate (over defect) and the propensity to enter the open market.
+        """
         role_model = self.model.network.get_role_model(self.neighbourhood)
         social_learning = role_model is not None and role_model is not self
 
@@ -170,13 +170,13 @@ class BaseAgent(Agent):
         setattr(self, action_prob_attr, prob)
 
     def update_behaviour(self):
-        """ Updates the behaviour of the agent.
+        """ Updates the propensities of the agent.
 
-            Updates the role model of the agent, i.e. the most successfull agent of the
-            neighbourhood. Also, the values for the propensity to enter the global market,
-            propensity to read signals (I.e. base its decision to either cooperate or
-            defect on reading signals instead of Parochialism) and propensity to either
-            cooperate or defect are updated.
+            The values for the propensity to enter the global market,
+            propensity to either cooperate or defect are updated according to
+            the learning rate and the propensity to read signals (I.e. base
+            its decision to either cooperate or defect on reading signals
+            instead of Parochialism).
         """
         self.update_propensity('location_prob', self.in_market)
         self.update_propensity('trustworthiness_prob',
@@ -185,15 +185,20 @@ class BaseAgent(Agent):
 
     @property
     def trust_in_stranger(self) -> bool:
+        """ Returns true if the agent is matched with a stranger and decided
+            to participate in the prisoners dilemma.
+        """
         return self.play and self.partner_is_stranger and self.paired
 
     @property
     def paired_with_stranger(self) -> bool:
+        """ Returns true if the agent is matched with a stranger.
+        """
         return self.partner_is_stranger and self.paired
 
 
 class MSAgent(BaseAgent):
-    """ Implementation of the Macy and Sato agent, extend a BaseAgent.
+    """ Implementation of the Macy and Sato agent, extends a BaseAgent.
 
         For this agent, the dicision to either play or walk away from an opportunity to play
         the prisoners' dilemma with the agent he is matched with is based on the propensity
@@ -201,8 +206,11 @@ class MSAgent(BaseAgent):
     """
 
     def decide_play(self, exchange_partner: 'MSAgent') -> None:
-        """ Updates the agents decision to play or exit a prisoners' dilemma based
-            on its propensity to trust another agent.
+        """ Updates the agents decision to play or exit a prisoners' dilemma.
+        
+            First, the agents propensities are updated in the decide_play method of the
+            super (BaseAgent). After this, the agent will play or exit based on the updated
+            propensity to play or exit.
         """
         super().decide_play(exchange_partner)
 
@@ -221,14 +229,18 @@ class WHAgent(BaseAgent):
     """
 
     def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int) -> None:
+        """ Initializes the WHAgent. In addition to the initialization done for the BaseAgent,
+            the reading of signals is set to false.  
+        """
         super().__init__(unique_id, model, neighbourhood)
         self.read_signal = False
 
     def decide_play(self, exchange_partner: 'WHAgent') -> None:
         """ Updates the agents decision to play or exit a prisoners' dilemma.
 
-            First, the agent decides to either base its decision on signal reading
-            or parochialism based on the agents' propensity to trust another agent.
+            First, the agents propensities are updated in the decide_play method of the
+            super (BaseAgent). Based on the propensity to either read signals or act
+            parochial, the agent will decide to either cooperate or defect. 
 
             If the agent decides to read the signals of the other agent, the outcome of
             the signal reading determines the agents' choice to either cooperate or defect.
@@ -246,8 +258,10 @@ class WHAgent(BaseAgent):
             self.parochialism()
 
     def signal_reading(self):
-        """
-        docstring
+        """ Determines whether or not to trust (so play/exit) the opponent, based on
+            the reading of signals. If the reading of signals shows that the opponent
+            will cooperate, the agent will trust the opponent. Otherwise, the agent
+            will not trust the opponent and exit the game. 
         """
         self.read_signal = True
         exchange_partner: 'WHAgent' = self.exchange_partner
@@ -259,20 +273,22 @@ class WHAgent(BaseAgent):
             self.play = False
 
     def parochialism(self):
-        """
-        docstring
+        """ Determines whether or not to trust (so play/exit) the opponent, based on
+            parochialism. If a partner is a stranger (so either the agent itself or
+            its partner is a newcomer, or you have entered the global market) the agent
+            decides not to trust the opponent. Otherwise, it will trust the opponent and
+            play the prisoners' game.
         """
         self.read_signal = False
         if self.partner_is_stranger:
-            # Also assume self as newcomer to distrust strangers
             self.play = False
         else:
             self.play = True
 
     def get_signal(self) -> PDTChoice:
-        """ Returns the choice the agent makes on whether to cooperate or defect in the
-            prisoners' dilemma, based on the reading of the signals the other agent
-            'shows'.
+        """ Returns the interpretation of the opponents signalled decision on
+            cooperating/defecting. Based on the signal of the opponent, and the
+            agents ability to read this signal.
 
             At a trustworthiness of 0.5 the agents is ambivalent.
             At either 0 or 1 the signal is assumed to be perfect.
@@ -286,18 +302,18 @@ class WHAgent(BaseAgent):
         return PDTChoice.COOPERATE if self.pdtchoice == PDTChoice.DEFECT else PDTChoice.DEFECT
 
     def update_behaviour(self):
-        """ Updates the behaviour of the agent.
+        """ Updates the propensities of the agent.
 
-            Updates the role model of the agent, i.e. the most successfull agent of the
-            neighbourhood. Also, the values for the propensity to enter the global market,
-            propensity to read signals (I.e. base its decision to either cooperate or
-            defect on reading signals instead of Parochialism) and propensity to either
-            cooperate or defect are updated.
+            The values for the propensity to enter the global market,
+            propensity to either cooperate or defect are updated according to
+            the learning rate and the propensity to read signals (I.e. base
+            its decision to either cooperate or defect on reading signals
+            instead of Parochialism). Note that the updating of the trust probabiltiy
+            is now updated on the action of reading the signal.
         """
         self.update_propensity('location_prob', self.in_market)
         self.update_propensity('trustworthiness_prob',
                                self.pdtchoice == PDTChoice.COOPERATE)
-        # Here the trust_prob is updated on the action of reading the signal
         self.update_propensity('trust_prob', self.read_signal)
 
 
@@ -305,12 +321,16 @@ class RLAgent(WHAgent):
     """ Implementation of the Reinforcement Learning agent, extends a WHAgent.
 
         Similar to the WHAgent, though the learning rate is no longer stochastic
-        but based on reinforcement learning.
+        but based on a new implementation of reinforcement learning.
     """
 
     def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int,
                  learning_rate: float, discount_factor: float = 0.9,
                  social_learning_rate: float = 0.5, relative_reward: bool = False) -> None:
+        """ Initializes the RLAgent. In addition to the initialization of the WHAgent
+            the RLAgent also initializes the total number of payoffs, the discount factor,
+            the learning rate, the social learning rate and the relative reward.
+        """
         super().__init__(unique_id, model, neighbourhood)
         self.n_payoffs = 0
 
@@ -331,9 +351,10 @@ class RLAgent(WHAgent):
         self.cumulative_payoff = payoff + self.discount_factor * self.cumulative_payoff
         self.n_payoffs = 1 + self.discount_factor * self.n_payoffs
 
-    # Overrides default stochastic learning behaviour
     def stochastic_learning(self, prob: float, payoff: float) -> float:
-        """ Calculates and returns a new value according to the reinforcement learning rate
+        """ Overrides the default stochastic learning behaviour.
+        
+            Calculates and returns a new value according to the reinforcement learning rate
             given the probability, current payoff and average payoff.
         """
         if (self.relative_reward and self.n_payoffs > 0):
@@ -347,7 +368,7 @@ class RLAgent(WHAgent):
 
 
 class BaseGossipAgent(WHAgent):
-    """ Implementation of the Gossip agent, extends a WHAgent.
+    """ Implementation of the BaseGossip agent, extends a WHAgent.
 
         This agent asks the role model whether or not the agent he has
         been matched with can be considered trustworthy, i.e. it takes the
@@ -356,9 +377,15 @@ class BaseGossipAgent(WHAgent):
     """
 
     def __init__(self, memory_size: int) -> None:
+        """ Initializes the BaseGossipAgent
+        """
         self.memories: LimitedDict[int, bool] = LimitedDict(memory_size)
 
     def finalize(self) -> None:
+        """ Finalize step of the BaseGossipAgent. Memorizes the outcome of
+            the last exchange, if both agents decided to play on top of the
+            finilize step of the BaseAgent (the super of the WHAgent).
+        """
         if self.paired and self.play and self.exchange_partner.play:
             self.memorize_trust()
         return super().finalize()
@@ -366,18 +393,13 @@ class BaseGossipAgent(WHAgent):
     def decide_play(self, exchange_partner: 'BaseGossipAgent') -> None:
         """ Updates the agents decision to play or exit a prisoners' dilemma.
 
-            First, the role model is updated. If the agent has had a positive
-            previous experiment with this role model, the agent will ask the
-            role model for advice.
-
-            The role model can only give advice if he has had a previous encounter
-            with the agent that he's asked advice about.
-
-            If the agent receives advice from the role model, it will trust this
-            advice and decide to cooperate or defect accordingly. In case the
-            role model can't give advice, the agent will fall back to its ability
-            to read the signals of the other agent, similar to the behavior of
-            the WHAgent.
+            First, the propensities of the agent are updated by the super method.
+            
+            If the agent memorizes a previous experience with its opponent, this will
+            determine its decicion to play/exit. If not, it will ask the role model for
+            advice which it will then base its decision on. If the role model also has
+            no recollection of a previous encounter with the opponent, the agent will
+            go back to the default and base its decision on signal reading.
         """
         super(WHAgent, self).decide_play(exchange_partner)
 
@@ -399,7 +421,8 @@ class BaseGossipAgent(WHAgent):
                 self.parochialism()
 
     def memorize_trust(self) -> None:
-        """ TODO
+        """ Memorizes the encounter with the opponent, save wehter or not
+            this was a positive encounter.
         """
         if self.payoff > 0:
             self.memories[self.exchange_partner.unique_id] = True
@@ -408,14 +431,22 @@ class BaseGossipAgent(WHAgent):
 
 
 class GossipAgent(BaseGossipAgent):
+    """ Implementation of the GossipAgent, extends the BaseGossipAgent and WHAgent.
+    """
     def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int,
                  memory_size: int) -> None:
+        """ Initializes the GossipAgent.
+        """
         super().__init__(memory_size)
         super(WHAgent, self).__init__(unique_id, model, neighbourhood)
 
 
 class RLGossipAgent(BaseGossipAgent, RLAgent):
+    """ Implementation of the RLGossipAgent, extends the BaseGossipAgent and RLAgent.
+    """
     def __init__(self, unique_id: int, model: 'PDTModel', neighbourhood: int, **kwargs) -> None:
+        """ Initializes the RLGossipAgent.
+        """
         memory_size = kwargs.pop('memory_size')
         super().__init__(memory_size)
         RLAgent.__init__(self, unique_id, model, neighbourhood, **kwargs)

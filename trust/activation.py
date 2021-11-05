@@ -28,11 +28,13 @@ class TwoStepActivation(BaseScheduler):
         self.time += .5
         self.steps += 1
 
-    '''Used for type checking
-    '''
     @property
     def agents(self) -> List['BaseAgent']:
+        """ Used for type checking
+        """
         return super().agents
 
     def agent_buffer(self, shuffled: bool = False) -> Iterator['BaseAgent']:
+        """ Returns the shuffled agent buffer.
+        """
         return super().agent_buffer(shuffled=shuffled)

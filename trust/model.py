@@ -7,7 +7,7 @@ import numpy as np
 from mesa import Model
 
 import trust.agent as agent_module
-from trust.activation import TwoStepActivation
+from trust.activation import TwoStepActivation 
 from trust.agent import *
 from trust.choice import PDTChoice
 from trust.datacollector import PDTDataCollector
@@ -44,20 +44,21 @@ class PDTModel(Model):
         """
         return PDTModel._EXIT_PAYOFF
 
-    # Can pass any class of agent that implements BaseAgent to AgentClass. Passing a str of
-    # the class also suffices: e.g. 'RLAgent'. kwargs are keyword arguments that are passed
-    # on to the __init__ of RLAgent. Check implementation for available args.
     def __init__(self, AgentClass: Union[str, type] = MSAgent, number_of_agents: int = 1000,
                  neighbourhood_size: int = 50, mobility_rate: float = 0.2, **kwargs) -> None:
-        """ Initializes the model. Can take parameters defining the agent type (default MSAgent),
-            population size N (default 1000), neighbourhood size (default 50) and mobility rate
-            (default 0.2). kwargs are keyword arguments that are passed on to the __init__ of
-            RLAgent.
+        """ Initializes the model. Can take parameters defining the agent type. Passing a str
+            of the class also suffices (default MSAgent), population size N (default 1000),
+            neighbourhood size (default 50) and mobility rate (default 0.2). kwargs are keyword
+            arguments that are passed on to the __init__ of RLAgent. Check implementation
+            for available args.
 
             The number of neighbourhoods n is calculated, after which a network with n
             neighbourhoods is created. Additionaly, a scheduler (as defined in activation.py)
             is created. All agents are distributed amongst the neighbourhoods and added to
-            the scheduler. Besides this, a datacollector is set up and initialized.
+            the scheduler. Besides this, a datacollector is set up and initialized in order
+            to be able to record and later analyze the results of the model.
+            
+            TODO: update this info if the clustering has been changed. 
         """
 
         self.num_agents = number_of_agents
@@ -94,11 +95,12 @@ class PDTModel(Model):
         })
 
     def step(self):
-        """ Lets the scheduler execute a step for all agents. Afterward, the nework pairs
-            all agents to another agent (with the exception of odd amount of agents in a
-            neighbourhood or globally) and lets them play the prisoners' game. If needed,
-            the data are stored in the datacollector. Finally, it lets the scheduler execute
-            the finalize method for all agents (and move to the next step).
+        """ Lets the scheduler execute a step for all agents, in which the agents possibly move to
+            a new neighbourhood and choose whether they want to enter either the local or global
+            market. Afterwards, the nework pairs all agents to another agent (with the exception
+            of odd amount of agents in a neighbourhood or globally) and lets them play the prisoners'
+            game. If needed, the data is stored in the datacollector. Finally, it lets the scheduler
+            execute the finalize method for all agents (and move to the next step).
         """
         self.schedule.step()
         self.network.pair_and_play()
