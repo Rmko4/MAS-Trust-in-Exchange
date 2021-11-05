@@ -1,3 +1,8 @@
+''' This file can compare results of different runs of different agents.
+    The input files must be created by "runMultipleExperiments.py".
+    The output is a plot comparing these runs in terms of trust in strangers
+    for different social mobilities and neighborhood sizes. 
+'''
 
 import matplotlib.pyplot as plt
 import sys
@@ -7,6 +12,7 @@ if (len(sys.argv) == 1):
     print("Please specify an input files")
     sys.exit()
 
+# ------------ plot comparing for different social mobilities -----------------------------
 
 def unpackMeanDependenSocialMobility(index):
     rlist = [0 for i in range(n_different_mob_rates)]
@@ -35,7 +41,6 @@ for file in sys.argv[1:]:
     yAxis = [mob_rate for mob_rate in np.arange(mob_rate_min,mob_rate_max + 0.0001,mob_rate_stepsize)]
     plt.plot(yAxis, unpackMeanDependenSocialMobility(1), label = file.split("Agent",1)[0] + " - Agent" )
 
-
 plt.ylabel('Trust in strangers')
 plt.xlabel('Social mobility')
 plt.legend()
@@ -43,6 +48,7 @@ ax = plt.gca()
 ax.set_ylim([0, 0.9])
 plt.show()
 
+# ------------ plot comparing for different neighborhood sizes -----------------------------
 
 def unpackMeanDependentNeighborhood(index):
     rlist = [0 for i in range(n_different_neighborhood_sizes)]
@@ -69,6 +75,7 @@ for file in sys.argv[1:]:
     n_different_neighborhood_sizes = int((n_max - n_min + 0.0001)  /  n_stepsize +1)
     yAxis = [ n for n in np.arange(n_min,n_max + 0.001, n_stepsize)]
     plt.plot(yAxis, unpackMeanDependentNeighborhood(1), label = file.split("Agent",1)[0] + " - Agent")
+
 plt.ylabel('Trust in strangers')
 plt.xlabel('Neighbourhood size')
 plt.legend()

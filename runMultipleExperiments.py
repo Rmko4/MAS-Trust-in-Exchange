@@ -1,20 +1,28 @@
+''' This runfile starts the multi-agent system model
+    for different mobilities and neighborhood sizes.
+    The output will be two .out files. The first can 
+    be used to print the average agents values for different
+    mobilities and neighborhood sizes. The second can be 
+    used to plot the density of agents trusting strangers.
+'''
+
 import pandas as pd
 from trust.model import PDTModel
-
 import numpy as np
 import sys
 
-N = 1000
-n_min = 10
-n_max = 100
-n_stepsize = 10
-mob_rate_min = 0
-mob_rate_max = 1
-mob_rate_stepsize = 0.1
+
+N = 1000 #number of agents
+n_min = 10 #minimal neighborhood size
+n_max = 100 #maximum neighborhood size
+n_stepsize = 10 #step size in which neighborhood size is changes
+mob_rate_min = 0 #minimum mobility rate
+mob_rate_max = 1 #maximum mobility rate
+mob_rate_stepsize = 0.1 #step size in which mobility is changed
 
 
 if (len(sys.argv) == 1):
-    print("Please specify name of Output file")
+    print("Please specify the name of Output file")
     sys.exit()
 
 if (len(sys.argv) == 3 ):
@@ -37,6 +45,7 @@ else:
     print('MSAgent')
     model_args = {'AgentClass': 'MSAgent', 'mobility_rate': 0.2, 'number_of_agents': 1000, 'neighbourhood_size': 30} 
 
+#specify the number of epochs before and after strarting to record values
 run_args = {'T_onset': 100, 'T_record': 100}
 
 print("Model params: " + str(model_args))
@@ -55,9 +64,7 @@ with open(str(sys.argv[1]) + ".out", 'w') as f:
 
                 model_args["mobility_rate"] = mob_rate
                 model_args["neighbourhood_size"] = n
-
                 model = PDTModel(**model_args)
-
                 model.run_model(**run_args)
                 df_m = model.datacollector.get_model_vars_dataframe()
                 df_a = model.datacollector.get_agent_props_dataframe()
@@ -71,9 +78,4 @@ with open(str(sys.argv[1]) + ".out", 'w') as f:
                 f.write(str(df_m["Trust_in_Newcomers"].mean()) + "\n")
                 for value in df_a["Trust_in_Stranger_proportion"]:
                     g.write(str(value) + " ")
-
-                #print(df_m["Trust_Rate"].mean())
-                #print(df_a["Trust_in_Stranger_proportion"].mean())
-                print(df_m["Trust_in_Strangers"].mean())
-                print(df_a["Trust_in_Stranger_proportion"].mean())
                 g.write("\n")
